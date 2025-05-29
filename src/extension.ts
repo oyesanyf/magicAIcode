@@ -60,6 +60,33 @@ interface CustomLlmConfig {
     endpoint: string;
 }
 
+// Add configuration interface
+interface ScanConfiguration {
+    sourceCodeExtensions: string[];
+    excludedDirectories: string[];
+    defaultModel: string;
+    batchSize: number;
+}
+
+// Add function to get scan configuration
+function getScanConfiguration(): ScanConfiguration {
+    const config = vscode.workspace.getConfiguration('secureCodingAssistant');
+    return {
+        sourceCodeExtensions: config.get<string[]>('sourceCodeExtensions', [
+            '.ts', '.js', '.py', '.java', '.c', '.cpp', '.go', '.rs', '.php', '.rb',
+            '.cs', '.swift', '.kt', '.m', '.h', '.hpp', '.json', '.yaml', '.yml',
+            '.xml', '.html', '.css', '.scss', '.less', '.sh', '.ps1', '.bat'
+        ]),
+        excludedDirectories: config.get<string[]>('excludedDirectories', [
+            'node_modules', 'dist', 'build', 'out', 'extension', 'bin', 'obj', 
+            '.git', '.svn', '.hg', '.vscode', '.vscode-test', 
+            'venv', 'env', '.env', '__pycache__'
+        ]),
+        defaultModel: config.get<string>('defaultModel', 'gpt-3.5-turbo'),
+        batchSize: config.get<number>('scanBatchSize', 5)
+    };
+}
+
 // Placeholder function for LLM API call
 async function callLlmApi(
     providerDisplayName: string,
@@ -91,6 +118,12 @@ Capabilities:
 - Performance & Complexity analysis
 - Maintainability & Style checking
 - Cryptographic hash detection and validation
+- Dependency and Library Analysis
+  * Check for known vulnerable dependencies
+  * Identify outdated or deprecated libraries
+  * Detect insecure library usage patterns
+  * Analyze package.json, requirements.txt, and other dependency files
+  * Flag libraries with known CVEs or security advisories
 
 For each issue found, provide:
 - Line number
@@ -98,6 +131,7 @@ For each issue found, provide:
 - Explanation of the problem
 - Suggested fix with secure alternatives
 - CWE or OWASP references when applicable
+- For library issues: CVE IDs and affected versions
 
 IMPORTANT: You MUST detect and report the following security issues:
 1. Hardcoded cryptographic hashes (SHA-1, SHA-256, SHA-384, SHA-512, Tiger, Whirlpool)
@@ -110,12 +144,18 @@ IMPORTANT: You MUST detect and report the following security issues:
 8. Insecure deserialization
 9. Insecure direct object references
 10. Security misconfiguration
+11. Vulnerable dependencies and libraries
+12. Outdated or deprecated packages
+13. Insecure library usage patterns
 
 When analyzing code, pay special attention to:
 - Variable assignments containing hash values
 - String literals that match hash patterns
 - Comments indicating hash types
 - Any hardcoded cryptographic values
+- Import statements and dependency declarations
+- Library version specifications
+- Usage of known vulnerable functions from libraries
 
 Include accuracy scoring:
 - Hallucination Score (0.0-1.0, lower is better)
@@ -127,6 +167,7 @@ Output must follow this structure:
 3. Issues Found (detailed per issue)
 4. Performance & Complexity Highlights
 5. Test Stub Offer
+6. Dependency Analysis (if applicable)
 
 Respond in JSON format with the following structure:
 {
@@ -147,9 +188,28 @@ Respond in JSON format with the following structure:
         "owaspReference": "string",
         "hallucinationScore": number,
         "confidenceScore": number,
-        "llmProvider": "string"
+        "llmProvider": "string",
+        "cveId": "string",
+        "affectedVersions": "string",
+        "fixedVersions": "string"
     }],
-    "performanceHighlights": ["string"]
+    "performanceHighlights": ["string"],
+    "dependencyAnalysis": {
+        "vulnerableDependencies": [{
+            "name": "string",
+            "version": "string",
+            "cveId": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "recommendation": "string"
+        }],
+        "outdatedDependencies": [{
+            "name": "string",
+            "currentVersion": "string",
+            "latestVersion": "string",
+            "updateRecommendation": "string"
+        }]
+    }
 }`;
 
     const userPrompt = `Analyze the following {languageId} code for security vulnerabilities and code quality issues. Pay special attention to:
@@ -364,103 +424,7 @@ Provide a comprehensive security analysis following the specified structure. Inc
     }
 }
 
-// Helper function to get OpenAI configuration
-function getOpenAIConfig(): { model: string; systemPrompt: string; userPrompt: string } {
-    const config = vscode.workspace.getConfiguration('secureCodingAssistant.openai');
-    const model = config.get<string>('model', "gpt-3.5-turbo");
-    
-    const systemPrompt = `You are a code security tool, a high-assurance code validation and security-auditing assistant.
-
-Your only allowed input is source code pasted or imported by the user. Reject any message that does not include code. Do not respond to general questions, instructions, or comments unless they are accompanied by code.
-
-Capabilities:
-- Source Code Analysis
-- Syntax and logic flaws detection
-- Code quality and best practices validation
-- Secure coding violations and known vulnerability patterns
-- Performance & Complexity analysis
-- Maintainability & Style checking
-- Cryptographic hash detection and validation
-
-For each issue found, provide:
-- Line number
-- Vulnerability or logic issue
-- Explanation of the problem
-- Suggested fix with secure alternatives
-- CWE or OWASP references when applicable
-
-IMPORTANT: You MUST detect and report the following security issues:
-1. Hardcoded cryptographic hashes (SHA-1, SHA-256, SHA-384, SHA-512, Tiger, Whirlpool)
-2. Hardcoded credentials and secrets
-3. Insecure cryptographic implementations
-4. SQL injection vulnerabilities
-5. Cross-site scripting (XSS)
-6. Command injection
-7. Path traversal
-8. Insecure deserialization
-9. Insecure direct object references
-10. Security misconfiguration
-
-When analyzing code, pay special attention to:
-- Variable assignments containing hash values
-- String literals that match hash patterns
-- Comments indicating hash types
-- Any hardcoded cryptographic values
-
-Include accuracy scoring:
-- Hallucination Score (0.0-1.0, lower is better)
-- Confidence Score (0.0-1.0, higher is better)
-
-Output must follow this structure:
-1. Summary (language, risk rating, issue count)
-2. Validated Code (clean blocks, good practices)
-3. Issues Found (detailed per issue)
-4. Performance & Complexity Highlights
-5. Test Stub Offer
-
-Respond in JSON format with the following structure:
-{
-    "summary": {
-        "language": "string",
-        "riskRating": "High|Medium|Low",
-        "issueCount": number
-    },
-    "validatedCode": ["string"],
-    "issues": [{
-        "id": "string",
-        "description": "string",
-        "location": "string",
-        "severity": "High|Medium|Low",
-        "recommendation": "string",
-        "lineNumber": "string",
-        "cweId": "string",
-        "owaspReference": "string",
-        "hallucinationScore": number,
-        "confidenceScore": number,
-        "llmProvider": "string"
-    }],
-    "performanceHighlights": ["string"]
-}`;
-
-    const userPrompt = `Analyze the following {languageId} code for security vulnerabilities and code quality issues. Pay special attention to:
-
-1. Hardcoded cryptographic hashes (SHA-1, SHA-256, SHA-384, SHA-512, Tiger, Whirlpool)
-2. Hardcoded credentials and secrets
-3. Insecure cryptographic implementations
-4. Other security vulnerabilities
-
-IMPORTANT: Look for variable assignments containing hash values and string literals that match hash patterns.
-
-\`\`\`
-{codeSnippet}
-\`\`\`
-
-Provide a comprehensive security analysis following the specified structure. Include all detected vulnerabilities, their severity, and recommended fixes. Ensure the response is in valid JSON format as specified in the system prompt.`;
-
-    return { model, systemPrompt, userPrompt };
-}
-
-// Add comprehensive security detection patterns
+// Update security patterns to include all vulnerability types
 const securityPatterns = {
     // Cryptographic Issues
     'HardcodedHashes': {
@@ -469,86 +433,148 @@ const securityPatterns = {
         'SHA-384': /=\s*["'][a-fA-F0-9]{96}["']/,
         'SHA-512': /=\s*["'][a-fA-F0-9]{128}["']/,
         'Tiger': /=\s*["'][a-fA-F0-9]{48}["']/,
-        'Whirlpool': /=\s*["'][a-fA-F0-9]{128}["']/
+        'Whirlpool': /=\s*["'][a-fA-F0-9]{128}["']/,
+        'MD5': /=\s*["'][a-fA-F0-9]{32}["']/,
+        'RIPEMD': /=\s*["'][a-fA-F0-9]{40}["']/
     },
     'InsecureCrypto': {
         'MD5': /md5|MD5/,
         'DES': /des|DES/,
         'RC4': /rc4|RC4/,
         'Blowfish': /blowfish|Blowfish/,
-        'WeakCipher': /ecb|ECB|CBC|OFB|CFB/
+        'WeakCipher': /ecb|ECB|CBC|OFB|CFB/,
+        'WeakHash': /md5|sha1|SHA1/,
+        'CustomCrypto': /custom.*crypt|crypt.*custom/
     },
     // Injection Patterns
     'SQLInjection': {
         'StringConcatenation': /['"]\s*\+\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\+\s*['"]/,
         'TemplateLiteral': /`\s*\$\{.*\}\s*`/,
-        'RawQuery': /executeQuery|rawQuery|query\(/
+        'RawQuery': /executeQuery|rawQuery|query\(/,
+        'DynamicSQL': /EXEC\s*\(|sp_executesql/,
+        'UnsafeEval': /eval\s*\(|exec\s*\(/
     },
     'XSS': {
         'InnerHTML': /\.innerHTML\s*=/,
         'DocumentWrite': /document\.write\(/,
-        'Eval': /eval\(|setTimeout\(|setInterval\(/
+        'Eval': /eval\(|setTimeout\(|setInterval\(/,
+        'UnsafeDOM': /\.outerHTML|\.insertAdjacentHTML/,
+        'UnsafeJQuery': /\$\(.*\)\.html\(/
     },
     'CommandInjection': {
         'Exec': /exec\(|spawn\(|system\(/,
-        'Shell': /shell_exec\(|passthru\(|proc_open\(/
+        'Shell': /shell_exec\(|passthru\(|proc_open\(/,
+        'OSCommand': /os\.system|subprocess\.call/,
+        'DynamicEval': /eval\(|Function\(/,
+        'TemplateInjection': /\$\{.*\}|%{.*}/
     },
     // Authentication & Authorization
     'HardcodedCredentials': {
         'APIKey': /api[_-]?key|apikey|secret[_-]?key/i,
         'Password': /password\s*=\s*['"][^'"]+['"]/i,
-        'Token': /token\s*=\s*['"][^'"]+['"]/i
+        'Token': /token\s*=\s*['"][^'"]+['"]/i,
+        'Secret': /secret\s*=\s*['"][^'"]+['"]/i,
+        'Credential': /credential\s*=\s*['"][^'"]+['"]/i
     },
     'WeakAuth': {
         'BasicAuth': /basic\s+auth|authorization:\s*basic/i,
-        'NoAuth': /public\s+function|public\s+class/
+        'NoAuth': /public\s+function|public\s+class/,
+        'WeakPassword': /password\s*=\s*['"][^'"]{1,7}['"]/i,
+        'HardcodedToken': /token\s*=\s*['"][^'"]+['"]/i,
+        'SessionFixation': /session\.id|sessionId/
     },
     // File Operations
     'PathTraversal': {
         'DotDot': /\.\.\/|\.\.\\/,
-        'AbsolutePath': /\/[a-zA-Z]:\/|^\/[a-zA-Z]/
+        'AbsolutePath': /\/[a-zA-Z]:\/|^\/[a-zA-Z]/,
+        'UnsafePath': /path\.join|os\.path\.join/,
+        'FileUpload': /\.upload\(|\.save\(/,
+        'FileDownload': /\.download\(|\.get\(/
     },
     'UnsafeFileOp': {
         'FileUpload': /\.upload\(|\.save\(/,
-        'FileDownload': /\.download\(|\.get\(/
+        'FileDownload': /\.download\(|\.get\(/,
+        'FileDelete': /\.delete\(|\.remove\(/,
+        'FileMove': /\.move\(|\.rename\(/,
+        'FileCopy': /\.copy\(|\.duplicate\(/
     },
     // Deserialization
     'UnsafeDeserialization': {
         'Pickle': /pickle\.loads\(/,
         'YAML': /yaml\.load\(/,
-        'XML': /XMLDecoder|XMLReader/
+        'XML': /XMLDecoder|XMLReader/,
+        'JSON': /JSON\.parse\(/,
+        'Eval': /eval\(|Function\(/
     },
     // Memory Safety
     'BufferOverflow': {
         'UnboundedCopy': /strcpy\(|strcat\(/,
-        'ArrayAccess': /\[[^\]]+\]\s*=\s*[^;]+;/
+        'ArrayAccess': /\[[^\]]+\]\s*=\s*[^;]+;/,
+        'UnsafeAlloc': /malloc\(|new\s+\[\]/,
+        'UnsafeString': /strncpy\(|strncat\(/,
+        'UnsafeArray': /Array\(|new\s+Array\(/
     },
     // Configuration
     'DebugCode': {
         'ConsoleLog': /console\.log\(|print\(/,
-        'Debugger': /debugger;|breakpoint/
+        'Debugger': /debugger;|breakpoint/,
+        'Alert': /alert\(|confirm\(/,
+        'Trace': /console\.trace\(|trace\(/,
+        'Debug': /debug\(|DEBUG/
+    },
+    // Input Validation
+    'MissingValidation': {
+        'NoInputCheck': /input\(|readline\(/,
+        'NoTypeCheck': /typeof|instanceof/,
+        'NoLengthCheck': /\.length|\.size/,
+        'NoRangeCheck': /if\s*\([^<>=!]+\s*[<>=!]+\s*[^<>=!]+\)/,
+        'NoFormatCheck': /\.match\(|\.test\(/
+    },
+    // Error Handling
+    'UnsafeErrorHandling': {
+        'EmptyCatch': /catch\s*\(\s*\)/,
+        'GenericException': /catch\s*\(Exception|Error\)/,
+        'SwallowedException': /catch.*\{\s*\}/,
+        'UnsafeThrow': /throw\s+new\s+Error/,
+        'UnsafeError': /error\(|fatal\(/
+    },
+    // Race Conditions
+    'RaceCondition': {
+        'UnsafeThread': /thread\.start\(|Thread\.start\(/,
+        'UnsafeAsync': /async\s+function|Promise\./,
+        'UnsafeLock': /lock\(|synchronized/,
+        'UnsafeWait': /wait\(|sleep\(/,
+        'UnsafeNotify': /notify\(|notifyAll\(/
     }
 };
 
-// Add a helper function to get the exact line number from original code
+// Update getExactLineNumber to preserve exact line structure including spaces
 function getExactLineNumber(originalCode: string, targetLine: string): number {
-    const lines = originalCode.split('\n');
+    // Split by newline but preserve empty lines and spaces
+    const lines = originalCode.split(/\r?\n/);
     const targetTrimmed = targetLine.trim();
     
-    for (let i = 0; i < lines.length; i++) {
-        if (lines[i].trim() === targetTrimmed) {
-            return i + 1; // Return 1-based line number
+    // Keep track of the original line number including empty lines and spaces
+    let lineNumber = 0;
+    for (const line of lines) {
+        lineNumber++;
+        // Compare trimmed lines but preserve original line number
+        if (line.trim() === targetTrimmed) {
+            return lineNumber;
         }
     }
     return 0;
 }
 
-// Update detectSecurityVulnerabilities to use exact line numbers
+// Update detectSecurityVulnerabilities to preserve exact line structure
 function detectSecurityVulnerabilities(code: string): Vulnerability[] {
     const vulnerabilities: Vulnerability[] = [];
-    const originalLines = code.split('\n');
+    // Split by newline but preserve empty lines and spaces
+    const originalLines = code.split(/\r?\n/);
+    let currentLineNumber = 0;
 
-    originalLines.forEach((line, index) => {
+    originalLines.forEach((line) => {
+        currentLineNumber++; // Increment for every line, including empty ones and spaces
         // Check each category of security patterns
         for (const [category, patterns] of Object.entries(securityPatterns)) {
             for (const [issueType, pattern] of Object.entries(patterns)) {
@@ -561,12 +587,12 @@ function detectSecurityVulnerabilities(code: string): Vulnerability[] {
                     vulnerabilities.push({
                         id: `${category}_${issueType}`,
                         description: `Hardcoded ${issueType} hash detected in variable assignment`,
-                        location: `Line ${index + 1}`,
+                        location: `Line ${currentLineNumber}`,
                         severity: severity,
                         recommendation: recommendation,
                         llmProvider: "Local Scanner",
                         fileName: "current_file",
-                        lineNumber: (index + 1).toString(),
+                        lineNumber: currentLineNumber.toString(),
                         cweId: cweId,
                         owaspReference: owaspRef,
                         hallucinationScore: 0.1,
@@ -654,10 +680,11 @@ function processVulnerabilities(
     vulnerabilities: any[],
     providerName: string,
     fileName: string,
-    languageId: string
+    languageId: string,
+    originalCode: string
 ): Vulnerability[] {
     // First, detect security vulnerabilities using our patterns
-    const securityVulns = detectSecurityVulnerabilities(vulnerabilities[0]?.codeSnippet || '');
+    const securityVulns = detectSecurityVulnerabilities(originalCode);
     
     // Handle both old and new format
     let processedVulns: Vulnerability[] = [];
@@ -665,7 +692,24 @@ function processVulnerabilities(
         // New format - extract issues from the comprehensive analysis
         const analysis = vulnerabilities[0];
         processedVulns = (analysis.issues || []).map((issue: any) => {
-            const lineNumber = issue.lineNumber ? parseInt(issue.lineNumber) : 0;
+            // Get line number from either lineNumber or location
+            let lineNumber = 0;
+            if (issue.lineNumber) {
+                lineNumber = parseInt(issue.lineNumber);
+            } else if (issue.location) {
+                // Extract line number from location string (e.g., "Line 42" or "Line: 42")
+                const match = issue.location.match(/Line\s*:?\s*(\d+)/i);
+                if (match) {
+                    lineNumber = parseInt(match[1]);
+                }
+            }
+            
+            // If we still don't have a valid line number, try to find it in the original code
+            if (!lineNumber || isNaN(lineNumber)) {
+                const exactLineNumber = getExactLineNumber(originalCode, issue.location || '');
+                lineNumber = exactLineNumber || 0;
+            }
+
             return {
                 id: issue.id || 'Unknown',
                 description: issue.description || 'No description provided',
@@ -684,7 +728,24 @@ function processVulnerabilities(
     } else {
         // Old format - process as before
         processedVulns = vulnerabilities.map(vuln => {
-            const lineNumber = vuln.lineNumber ? parseInt(vuln.lineNumber) : 0;
+            // Get line number from either lineNumber or location
+            let lineNumber = 0;
+            if (vuln.lineNumber) {
+                lineNumber = parseInt(vuln.lineNumber);
+            } else if (vuln.location) {
+                // Extract line number from location string (e.g., "Line 42" or "Line: 42")
+                const match = vuln.location.match(/Line\s*:?\s*(\d+)/i);
+                if (match) {
+                    lineNumber = parseInt(match[1]);
+                }
+            }
+            
+            // If we still don't have a valid line number, try to find it in the original code
+            if (!lineNumber || isNaN(lineNumber)) {
+                const exactLineNumber = getExactLineNumber(originalCode, vuln.location || '');
+                lineNumber = exactLineNumber || 0;
+            }
+
             return {
                 id: vuln.id || 'Unknown',
                 description: vuln.description || 'No description provided',
@@ -706,7 +767,7 @@ function processVulnerabilities(
     return [...processedVulns, ...securityVulns];
 }
 
-// Update analyzeCodeWithOpenAI to preserve exact line numbers
+// Update analyzeCodeWithOpenAI to preserve exact line structure
 async function analyzeCodeWithOpenAI(
     apiKey: string,
     codeSnippet: string,
@@ -718,7 +779,8 @@ async function analyzeCodeWithOpenAI(
     try {
         // Keep the original code exactly as is, including all spaces and empty lines
         const formattedCode = codeSnippet;
-        const originalLines = codeSnippet.split('\n');
+        // Split by newline but preserve empty lines and spaces
+        const originalLines = codeSnippet.split(/\r?\n/);
 
         const openai = new OpenAI({ apiKey });
         const response = await openai.chat.completions.create({
@@ -741,41 +803,43 @@ async function analyzeCodeWithOpenAI(
                 if (Array.isArray(result)) {
                     vulnerabilities = result.map((v: any) => {
                         const lineNumber = v.lineNumber ? parseInt(v.lineNumber) : 0;
-                        const location = v.location || '';
+                        const exactLineNumber = getExactLineNumber(codeSnippet, v.location || '');
                         return {
                             ...v,
                             llmProvider: LlmProvider.OpenAI,
                             fileName,
-                            lineNumber: lineNumber.toString(),
-                            location: `Line ${lineNumber}`
+                            lineNumber: (exactLineNumber || lineNumber).toString(),
+                            location: `Line ${exactLineNumber || lineNumber}`
                         };
                     });
                 } else if (result?.vulnerabilities) {
                     vulnerabilities = result.vulnerabilities.map((v: any) => {
                         const lineNumber = v.lineNumber ? parseInt(v.lineNumber) : 0;
+                        const exactLineNumber = getExactLineNumber(codeSnippet, v.location || '');
                         return {
                             ...v,
                             llmProvider: LlmProvider.OpenAI,
                             fileName,
-                            lineNumber: lineNumber.toString(),
-                            location: `Line ${lineNumber}`
+                            lineNumber: (exactLineNumber || lineNumber).toString(),
+                            location: `Line ${exactLineNumber || lineNumber}`
                         };
                     });
                 } else if (result?.issues) {
                     vulnerabilities = result.issues.map((v: any) => {
                         const lineNumber = v.lineNumber ? parseInt(v.lineNumber) : 0;
+                        const exactLineNumber = getExactLineNumber(codeSnippet, v.location || '');
                         return {
                             ...v,
                             llmProvider: LlmProvider.OpenAI,
                             fileName,
-                            lineNumber: lineNumber.toString(),
-                            location: `Line ${lineNumber}`
+                            lineNumber: (exactLineNumber || lineNumber).toString(),
+                            location: `Line ${exactLineNumber || lineNumber}`
                         };
                     });
                 }
 
                 // Process vulnerabilities using the helper function
-                const processedVulnerabilities = processVulnerabilities(vulnerabilities, LlmProvider.OpenAI, fileName, languageId);
+                const processedVulnerabilities = processVulnerabilities(vulnerabilities, LlmProvider.OpenAI, fileName, languageId, codeSnippet);
                 
                 // Ensure line numbers are accurate
                 processedVulnerabilities.forEach(v => {
@@ -810,57 +874,7 @@ async function analyzeCodeWithOpenAI(
     }
 }
 
-// Helper function to generate code fixes based on vulnerability type
-function generateCodeFix(vuln: Vulnerability, languageId: string): string | null {
-    const description = vuln.description.toLowerCase();
-    const location = vuln.location;
-
-    if (description.includes('sql injection')) {
-        if (languageId === 'python') {
-            return `# Instead of:
-${location}
-
-# Use parameterized query:
-cur.execute("SELECT * FROM USER WHERE NAME = ?", (name,))`;
-        } else if (languageId === 'javascript' || languageId === 'typescript') {
-            return `// Instead of:
-${location}
-
-// Use parameterized query:
-db.query("SELECT * FROM USER WHERE NAME = ?", [name])`;
-        }
-    } else if (description.includes('xss')) {
-        if (languageId === 'html') {
-            return `<!-- Instead of:
-${location}
-
-<!-- Use proper escaping:
-<div>${escapeHtml('userInput')}</div>`;
-        }
-    } else if (description.includes('command injection')) {
-        if (languageId === 'python') {
-            return `# Instead of:
-${location}
-
-# Use subprocess with shell=False:
-subprocess.run(['command', 'arg1', 'arg2'], shell=False)`;
-        }
-    }
-
-    return null;
-}
-
-// Helper function to escape HTML
-function escapeHtml(unsafe: string): string {
-    return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-// Update formatAndLogVulnerabilities to display exact line numbers
+// Update formatAndLogVulnerabilities to handle line numbers properly
 function formatAndLogVulnerabilities(vulnerabilities: Vulnerability[], providerDisplayName: string) {
     if (!outputChannel) return;
     outputChannel.clear();
@@ -877,18 +891,379 @@ function formatAndLogVulnerabilities(vulnerabilities: Vulnerability[], providerD
         outputChannel.appendLine(`Severity: ${vuln.severity}`);
         if (vuln.fileName) {
             outputChannel.appendLine(`File: ${vuln.fileName}`);
-            if (vuln.lineNumber) {
-                outputChannel.appendLine(`Location: Line ${vuln.lineNumber}`);
+            // Ensure line number is valid before displaying
+            const lineNumber = parseInt(vuln.lineNumber || '0');
+            if (!isNaN(lineNumber) && lineNumber > 0) {
+                outputChannel.appendLine(`Location: Line ${lineNumber}`);
+            } else {
+                outputChannel.appendLine(`Location: Line 0 (Unable to determine exact line)`);
             }
         } else {
             outputChannel.appendLine(`File: Unknown`);
         }
         outputChannel.appendLine(`Recommendation: ${vuln.recommendation}`);
         outputChannel.appendLine(`Detected by: ${vuln.llmProvider || providerDisplayName}`);
+
+        // Add the rewritten code suggestion
+        const fix = generateCodeFix(vuln, vuln.fileName?.split('.').pop() || '');
+        if (fix) {
+            outputChannel.appendLine("\nSuggested Fix:");
+            outputChannel.appendLine(fix);
+        }
     });
     outputChannel.appendLine("----------------------------------------");
 }
 
+// Update generateCodeFix to handle all vulnerability types
+function generateCodeFix(vuln: Vulnerability, languageId: string): string | null {
+    const description = vuln.description.toLowerCase();
+    const location = vuln.location;
+
+    // Handle all vulnerability types with language-specific fixes
+    const fixes: Record<string, Record<string, string>> = {
+        'python': {
+            'hardcoded hash': `# Instead of hardcoded hash:
+${location}
+
+# Use environment variable or secure configuration:
+hash_value = os.getenv('HASH_VALUE') or config.get('hash_value')`,
+
+            'insecure crypto': `# Instead of weak crypto:
+${location}
+
+# Use strong cryptography:
+from cryptography.fernet import Fernet
+key = Fernet.generate_key()
+cipher_suite = Fernet(key)`,
+
+            'sql injection': `# Instead of string concatenation:
+${location}
+
+# Use parameterized queries:
+cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))`,
+
+            'xss': `# Instead of unsafe HTML:
+${location}
+
+# Use proper escaping:
+from html import escape
+safe_html = escape(user_input)`,
+
+            'command injection': `# Instead of shell execution:
+${location}
+
+# Use subprocess safely:
+subprocess.run(['command', 'arg1', 'arg2'], shell=False)`,
+
+            'path traversal': `# Instead of direct path:
+${location}
+
+# Use secure path resolution:
+safe_path = os.path.normpath(os.path.join(base_dir, user_input))
+if not safe_path.startswith(base_dir):
+    raise SecurityError("Invalid path")`,
+
+            'unsafe deserialization': `# Instead of unsafe deserialization:
+${location}
+
+# Use safe deserialization:
+import json
+data = json.loads(user_input)  # For JSON
+# Or use a safe deserialization library for other formats`,
+
+            'buffer overflow': `# Instead of unsafe buffer:
+${location}
+
+# Use safe string handling:
+safe_string = user_input[:max_length]  # Truncate
+# Or use a safe buffer library`,
+
+            'debug code': `# Instead of print statements:
+${location}
+
+# Use proper logging:
+import logging
+logging.debug("Debug message")`,
+
+            'missing validation': `# Instead of no validation:
+${location}
+
+# Add input validation:
+if not isinstance(user_input, str) or len(user_input) > max_length:
+    raise ValueError("Invalid input")`,
+
+            'unsafe error handling': `# Instead of empty catch:
+${location}
+
+# Use proper error handling:
+try:
+    # Operation
+except Exception as e:
+    logger.error(f"Operation failed: {e}")
+    raise`,
+
+            'race condition': `# Instead of unsafe threading:
+${location}
+
+# Use thread-safe operations:
+from threading import Lock
+lock = Lock()
+with lock:
+    # Critical section`
+        },
+        'javascript': {
+            'hardcoded hash': `// Instead of hardcoded hash:
+${location}
+
+// Use environment variable or secure configuration:
+const hashValue = process.env.HASH_VALUE || config.hashValue;`,
+
+            'insecure crypto': `// Instead of weak crypto:
+${location}
+
+// Use strong cryptography:
+const crypto = require('crypto');
+const key = crypto.randomBytes(32);
+const iv = crypto.randomBytes(16);`,
+
+            'sql injection': `// Instead of string concatenation:
+${location}
+
+// Use parameterized queries:
+db.query("SELECT * FROM users WHERE id = ?", [userId])`,
+
+            'xss': `// Instead of unsafe HTML:
+${location}
+
+// Use proper escaping:
+element.textContent = userInput;  // or
+element.innerHTML = escapeHtml(userInput);`,
+
+            'command injection': `// Instead of shell execution:
+${location}
+
+// Use child_process safely:
+const { execFile } = require('child_process');
+execFile('command', ['arg1', 'arg2'], (error, stdout, stderr) => {
+    // Handle result
+});`,
+
+            'path traversal': `// Instead of direct path:
+${location}
+
+// Use secure path resolution:
+const safePath = path.normalize(path.join(baseDir, userInput));
+if (!safePath.startsWith(baseDir)) {
+    throw new Error("Invalid path");
+}`,
+
+            'unsafe deserialization': `// Instead of unsafe deserialization:
+${location}
+
+// Use safe deserialization:
+const data = JSON.parse(userInput);  // For JSON
+// Or use a safe deserialization library for other formats`,
+
+            'buffer overflow': `// Instead of unsafe buffer:
+${location}
+
+// Use safe string handling:
+const safeString = userInput.slice(0, maxLength);  // Truncate
+// Or use a safe buffer library`,
+
+            'debug code': `// Instead of console.log:
+${location}
+
+// Use proper logging:
+console.debug("Debug message");  // Or use a logging library`,
+
+            'missing validation': `// Instead of no validation:
+${location}
+
+// Add input validation:
+if (typeof userInput !== 'string' || userInput.length > maxLength) {
+    throw new Error("Invalid input");
+}`,
+
+            'unsafe error handling': `// Instead of empty catch:
+${location}
+
+// Use proper error handling:
+try {
+    // Operation
+} catch (error) {
+    logger.error('Operation failed:', error);
+    throw error;
+}`,
+
+            'race condition': `// Instead of unsafe async:
+${location}
+
+// Use async/await with proper error handling:
+async function safeOperation() {
+    try {
+        await operation();
+    } catch (error) {
+        logger.error('Operation failed:', error);
+        throw error;
+    }
+}`
+        }
+    };
+
+    // Find the appropriate fix based on the vulnerability description
+    for (const [lang, langFixes] of Object.entries(fixes)) {
+        if (languageId.toLowerCase().includes(lang)) {
+            for (const [vulnType, fix] of Object.entries(langFixes)) {
+                if (description.includes(vulnType)) {
+                    return fix;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Helper function to escape HTML
+function escapeHtml(unsafe: string): string {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// Helper function to get OpenAI configuration
+function getOpenAIConfig(): { model: string; systemPrompt: string; userPrompt: string } {
+    const config = vscode.workspace.getConfiguration('secureCodingAssistant.openai');
+    const scanConfig = getScanConfiguration();
+    const model = config.get<string>('model', scanConfig.defaultModel);
+    
+    const systemPrompt = `You are a code security tool, a high-assurance code validation and security-auditing assistant.
+
+Your only allowed input is source code pasted or imported by the user. Reject any message that does not include code. Do not respond to general questions, instructions, or comments unless they are accompanied by code.
+
+Capabilities:
+- Source Code Analysis
+- Syntax and logic flaws detection
+- Code quality and best practices validation
+- Secure coding violations and known vulnerability patterns
+- Performance & Complexity analysis
+- Maintainability & Style checking
+- Cryptographic hash detection and validation
+- Dependency and Library Analysis
+  * Check for known vulnerable dependencies
+  * Identify outdated or deprecated libraries
+  * Detect insecure library usage patterns
+  * Analyze package.json, requirements.txt, and other dependency files
+  * Flag libraries with known CVEs or security advisories
+
+For each issue found, provide:
+- Line number
+- Vulnerability or logic issue
+- Explanation of the problem
+- Suggested fix with secure alternatives
+- CWE or OWASP references when applicable
+- For library issues: CVE IDs and affected versions
+
+IMPORTANT: You MUST detect and report the following security issues:
+1. Hardcoded cryptographic hashes (SHA-1, SHA-256, SHA-384, SHA-512, Tiger, Whirlpool)
+2. Hardcoded credentials and secrets
+3. Insecure cryptographic implementations
+4. SQL injection vulnerabilities
+5. Cross-site scripting (XSS)
+6. Command injection
+7. Path traversal
+8. Insecure deserialization
+9. Insecure direct object references
+10. Security misconfiguration
+11. Vulnerable dependencies and libraries
+12. Outdated or deprecated packages
+13. Insecure library usage patterns
+
+When analyzing code, pay special attention to:
+- Variable assignments containing hash values
+- String literals that match hash patterns
+- Comments indicating hash types
+- Any hardcoded cryptographic values
+- Import statements and dependency declarations
+- Library version specifications
+- Usage of known vulnerable functions from libraries
+
+Include accuracy scoring:
+- Hallucination Score (0.0-1.0, lower is better)
+- Confidence Score (0.0-1.0, higher is better)
+
+Output must follow this structure:
+1. Summary (language, risk rating, issue count)
+2. Validated Code (clean blocks, good practices)
+3. Issues Found (detailed per issue)
+4. Performance & Complexity Highlights
+5. Test Stub Offer
+6. Dependency Analysis (if applicable)
+
+Respond in JSON format with the following structure:
+{
+    "summary": {
+        "language": "string",
+        "riskRating": "High|Medium|Low",
+        "issueCount": number
+    },
+    "validatedCode": ["string"],
+    "issues": [{
+        "id": "string",
+        "description": "string",
+        "location": "string",
+        "severity": "High|Medium|Low",
+        "recommendation": "string",
+        "lineNumber": "string",
+        "cweId": "string",
+        "owaspReference": "string",
+        "hallucinationScore": number,
+        "confidenceScore": number,
+        "llmProvider": "string",
+        "cveId": "string",
+        "affectedVersions": "string",
+        "fixedVersions": "string"
+    }],
+    "performanceHighlights": ["string"],
+    "dependencyAnalysis": {
+        "vulnerableDependencies": [{
+            "name": "string",
+            "version": "string",
+            "cveId": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "recommendation": "string"
+        }],
+        "outdatedDependencies": [{
+            "name": "string",
+            "currentVersion": "string",
+            "latestVersion": "string",
+            "updateRecommendation": "string"
+        }]
+    }
+}`;
+
+    const userPrompt = `Analyze the following {languageId} code for security vulnerabilities and code quality issues. Pay special attention to:
+
+1. Hardcoded cryptographic hashes (SHA-1, SHA-256, SHA-384, SHA-512, Tiger, Whirlpool)
+2. Hardcoded credentials and secrets
+3. Insecure cryptographic implementations
+4. Other security vulnerabilities
+
+IMPORTANT: Look for variable assignments containing hash values and string literals that match hash patterns.
+
+\`\`\`
+{codeSnippet}
+\`\`\`
+
+Provide a comprehensive security analysis following the specified structure. Include all detected vulnerabilities, their severity, and recommended fixes. Ensure the response is in valid JSON format as specified in the system prompt.`;
+
+    return { model, systemPrompt, userPrompt };
+}
 
 export function activate(context: vscode.ExtensionContext) {
     // Create output channel
@@ -962,6 +1337,7 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
+        // Get the exact text including all spaces and empty lines
         const selectedText = editor.document.getText(selection);
         const languageId = editor.document.languageId;
         const fileName = editor.document.fileName.substring(editor.document.fileName.lastIndexOf('/') + 1);
@@ -1004,8 +1380,8 @@ export function activate(context: vscode.ExtensionContext) {
                     }
                 }
                 
-                // Process vulnerabilities consistently
-                vulnerabilities = processVulnerabilities(vulnerabilities, preferredLlm, fileName, languageId);
+                // Process vulnerabilities consistently with exact line numbers
+                vulnerabilities = processVulnerabilities(vulnerabilities, preferredLlm, fileName, languageId, selectedText);
                 
                 // Ensure llmProvider is set for each vulnerability
                 vulnerabilities.forEach(v => {
@@ -1044,6 +1420,7 @@ export function activate(context: vscode.ExtensionContext) {
             return { success: false, fileName: shortFileName, error: errorMessage };
         }
 
+        // Get the exact file content including all spaces and empty lines
         const fileContent = documentToScan.getText();
         const languageId = documentToScan.languageId;
 
@@ -1130,8 +1507,8 @@ export function activate(context: vscode.ExtensionContext) {
                     }
                 }
 
-                // Process vulnerabilities consistently
-                vulnerabilities = processVulnerabilities(vulnerabilities, providerNameToUse, shortFileName, languageId);
+                // Process vulnerabilities consistently with exact line numbers
+                vulnerabilities = processVulnerabilities(vulnerabilities, providerNameToUse, shortFileName, languageId, fileContent);
                 
                 // Double-check that llmProvider is set for each vulnerability
                 vulnerabilities.forEach(v => {
@@ -1214,18 +1591,9 @@ export function activate(context: vscode.ExtensionContext) {
         if (outputChannel) outputChannel.appendLine(`Starting scan for folder: ${effectiveFolderUri.fsPath}`);
         vscode.window.showInformationMessage(`Scanning folder: ${effectiveFolderUri.fsPath}...`);
 
-        // Define supported file extensions and excluded directories
-        const sourceCodeExtensions = new Set([
-            '.ts', '.js', '.py', '.java', '.c', '.cpp', '.go', '.rs', '.php', '.rb',
-            '.cs', '.swift', '.kt', '.m', '.h', '.hpp', '.json', '.yaml', '.yml',
-            '.xml', '.html', '.css', '.scss', '.less', '.sh', '.ps1', '.bat'
-        ]);
-
-        const commonExcludedDirs = new Set([
-            'node_modules', 'dist', 'build', 'out', 'extension', 'bin', 'obj', 
-            '.git', '.svn', '.hg', '.vscode', '.vscode-test', 
-            'venv', 'env', '.env', '__pycache__'
-        ]);
+        const scanConfig = getScanConfiguration();
+        const sourceCodeExtensions = new Set(scanConfig.sourceCodeExtensions);
+        const commonExcludedDirs = new Set(scanConfig.excludedDirectories);
 
         // Track files to scan and results
         const filesToScan: vscode.Uri[] = [];
@@ -1255,9 +1623,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         // Function to process files in batches
-        async function processFilesInBatches(files: vscode.Uri[], batchSize: number = 5) {
-            for (let i = 0; i < files.length; i += batchSize) {
-                const batch = files.slice(i, i + batchSize);
+        async function processFilesInBatches(files: vscode.Uri[]) {
+            for (let i = 0; i < files.length; i += scanConfig.batchSize) {
+                const batch = files.slice(i, i + scanConfig.batchSize);
                 const batchResults = await Promise.all(
                     batch.map(file => executeScanOnFileLogic(file, context, true))
                 );

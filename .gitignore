@@ -2,8 +2,8 @@
 node_modules
 
 # Build output
-out
-*.vsix
+#out
+#*.vsix
 
 # VS Code specific
 .vscode-test/
