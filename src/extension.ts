@@ -530,12 +530,25 @@ const securityPatterns = {
     }
 };
 
-// Function to detect security vulnerabilities
+// Add a helper function to get the exact line number from original code
+function getExactLineNumber(originalCode: string, targetLine: string): number {
+    const lines = originalCode.split('\n');
+    const targetTrimmed = targetLine.trim();
+    
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === targetTrimmed) {
+            return i + 1; // Return 1-based line number
+        }
+    }
+    return 0;
+}
+
+// Update detectSecurityVulnerabilities to use exact line numbers
 function detectSecurityVulnerabilities(code: string): Vulnerability[] {
     const vulnerabilities: Vulnerability[] = [];
-    const lines = code.split('\n');
+    const originalLines = code.split('\n');
 
-    lines.forEach((line, index) => {
+    originalLines.forEach((line, index) => {
         // Check each category of security patterns
         for (const [category, patterns] of Object.entries(securityPatterns)) {
             for (const [issueType, pattern] of Object.entries(patterns)) {
@@ -548,7 +561,7 @@ function detectSecurityVulnerabilities(code: string): Vulnerability[] {
                     vulnerabilities.push({
                         id: `${category}_${issueType}`,
                         description: `Hardcoded ${issueType} hash detected in variable assignment`,
-                        location: line.trim(),
+                        location: `Line ${index + 1}`,
                         severity: severity,
                         recommendation: recommendation,
                         llmProvider: "Local Scanner",
@@ -556,8 +569,8 @@ function detectSecurityVulnerabilities(code: string): Vulnerability[] {
                         lineNumber: (index + 1).toString(),
                         cweId: cweId,
                         owaspReference: owaspRef,
-                        hallucinationScore: 0.1, // Low hallucination score for pattern-based detection
-                        confidenceScore: 0.9 // High confidence for pattern-based detection
+                        hallucinationScore: 0.1,
+                        confidenceScore: 0.9
                     });
                 }
             }
@@ -636,7 +649,7 @@ function getOWASPReferenceForIssue(category: string, issueType: string): string 
     return owaspMap[issueType] || '';
 }
 
-// Update processVulnerabilities to include the new security detection
+// Update processVulnerabilities to handle exact line numbers
 function processVulnerabilities(
     vulnerabilities: any[],
     providerName: string,
@@ -652,42 +665,40 @@ function processVulnerabilities(
         // New format - extract issues from the comprehensive analysis
         const analysis = vulnerabilities[0];
         processedVulns = (analysis.issues || []).map((issue: any) => {
-            const processedVuln: Vulnerability = {
+            const lineNumber = issue.lineNumber ? parseInt(issue.lineNumber) : 0;
+            return {
                 id: issue.id || 'Unknown',
                 description: issue.description || 'No description provided',
-                location: issue.location || 'Unknown location',
+                location: `Line ${lineNumber}`,
                 severity: issue.severity || 'Medium',
                 recommendation: issue.recommendation || 'No recommendation provided',
                 llmProvider: providerName,
                 fileName: fileName || issue.fileName,
-                lineNumber: issue.lineNumber,
+                lineNumber: lineNumber.toString(),
                 cweId: issue.cweId,
                 owaspReference: issue.owaspReference,
                 hallucinationScore: issue.hallucinationScore,
                 confidenceScore: issue.confidenceScore
             };
-
-            return processedVuln;
         });
     } else {
         // Old format - process as before
         processedVulns = vulnerabilities.map(vuln => {
-            const processedVuln: Vulnerability = {
+            const lineNumber = vuln.lineNumber ? parseInt(vuln.lineNumber) : 0;
+            return {
                 id: vuln.id || 'Unknown',
                 description: vuln.description || 'No description provided',
-                location: vuln.location || 'Unknown location',
+                location: `Line ${lineNumber}`,
                 severity: vuln.severity || 'Medium',
                 recommendation: vuln.recommendation || 'No recommendation provided',
                 llmProvider: providerName,
                 fileName: fileName || vuln.fileName,
-                lineNumber: vuln.lineNumber,
+                lineNumber: lineNumber.toString(),
                 cweId: vuln.cweId,
                 owaspReference: vuln.owaspReference,
                 hallucinationScore: vuln.hallucinationScore,
                 confidenceScore: vuln.confidenceScore
             };
-
-            return processedVuln;
         });
     }
 
@@ -695,7 +706,7 @@ function processVulnerabilities(
     return [...processedVulns, ...securityVulns];
 }
 
-// Update analyzeCodeWithOpenAI to include better code formatting
+// Update analyzeCodeWithOpenAI to preserve exact line numbers
 async function analyzeCodeWithOpenAI(
     apiKey: string,
     codeSnippet: string,
@@ -705,12 +716,9 @@ async function analyzeCodeWithOpenAI(
     const { model, systemPrompt, userPrompt } = getOpenAIConfig();
 
     try {
-        // Format the code snippet to ensure proper line breaks and indentation
-        const formattedCode = codeSnippet
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0)
-            .join('\n');
+        // Keep the original code exactly as is, including all spaces and empty lines
+        const formattedCode = codeSnippet;
+        const originalLines = codeSnippet.split('\n');
 
         const openai = new OpenAI({ apiKey });
         const response = await openai.chat.completions.create({
@@ -720,7 +728,7 @@ async function analyzeCodeWithOpenAI(
                 { role: 'user', content: userPrompt.replace('{languageId}', languageId).replace('{codeSnippet}', formattedCode) }
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.1 // Lower temperature for more deterministic results
+            temperature: 0.1
         });
 
         const content = response.choices[0]?.message?.content;
@@ -729,30 +737,59 @@ async function analyzeCodeWithOpenAI(
                 const result = JSON.parse(content);
                 let vulnerabilities: Vulnerability[] = [];
                 
-                // Check if the result itself is the array or if it's nested under a key
+                // Process vulnerabilities based on format
                 if (Array.isArray(result)) {
-                    vulnerabilities = result.map((v: any) => ({ ...v, llmProvider: LlmProvider.OpenAI, fileName }));
-                } else if (result && typeof result === 'object' && Array.isArray(result.vulnerabilities)) {
-                    vulnerabilities = result.vulnerabilities.map((v: any) => ({ ...v, llmProvider: LlmProvider.OpenAI, fileName }));
-                } else if (result && typeof result === 'object' && Array.isArray(result.issues)) {
-                    vulnerabilities = result.issues.map((v: any) => ({ ...v, llmProvider: LlmProvider.OpenAI, fileName }));
-                } else {
-                    if (outputChannel) {
-                        outputChannel.appendLine(`OpenAI response is not in the expected format: ${content}`);
-                    }
-                    return [];
+                    vulnerabilities = result.map((v: any) => {
+                        const lineNumber = v.lineNumber ? parseInt(v.lineNumber) : 0;
+                        const location = v.location || '';
+                        return {
+                            ...v,
+                            llmProvider: LlmProvider.OpenAI,
+                            fileName,
+                            lineNumber: lineNumber.toString(),
+                            location: `Line ${lineNumber}`
+                        };
+                    });
+                } else if (result?.vulnerabilities) {
+                    vulnerabilities = result.vulnerabilities.map((v: any) => {
+                        const lineNumber = v.lineNumber ? parseInt(v.lineNumber) : 0;
+                        return {
+                            ...v,
+                            llmProvider: LlmProvider.OpenAI,
+                            fileName,
+                            lineNumber: lineNumber.toString(),
+                            location: `Line ${lineNumber}`
+                        };
+                    });
+                } else if (result?.issues) {
+                    vulnerabilities = result.issues.map((v: any) => {
+                        const lineNumber = v.lineNumber ? parseInt(v.lineNumber) : 0;
+                        return {
+                            ...v,
+                            llmProvider: LlmProvider.OpenAI,
+                            fileName,
+                            lineNumber: lineNumber.toString(),
+                            location: `Line ${lineNumber}`
+                        };
+                    });
                 }
 
                 // Process vulnerabilities using the helper function
                 const processedVulnerabilities = processVulnerabilities(vulnerabilities, LlmProvider.OpenAI, fileName, languageId);
                 
-                // Double-check that llmProvider is set for each vulnerability
+                // Ensure line numbers are accurate
                 processedVulnerabilities.forEach(v => {
                     if (!v.llmProvider) {
                         v.llmProvider = LlmProvider.OpenAI;
                     }
                     if (!v.fileName) {
                         v.fileName = fileName;
+                    }
+                    if (v.lineNumber) {
+                        const lineNumber = parseInt(v.lineNumber);
+                        if (lineNumber > 0 && lineNumber <= originalLines.length) {
+                            v.location = `Line ${lineNumber}`;
+                        }
                     }
                 });
                 
@@ -763,12 +800,8 @@ async function analyzeCodeWithOpenAI(
                 }
                 return [];
             }
-        } else {
-            if (outputChannel) {
-                outputChannel.appendLine("OpenAI returned an empty response.");
-            }
-            return [];
         }
+        return [];
     } catch (error: any) {
         if (outputChannel) {
             outputChannel.appendLine(`Error calling OpenAI API: ${error.message}`);
@@ -827,9 +860,10 @@ function escapeHtml(unsafe: string): string {
         .replace(/'/g, "&#039;");
 }
 
+// Update formatAndLogVulnerabilities to display exact line numbers
 function formatAndLogVulnerabilities(vulnerabilities: Vulnerability[], providerDisplayName: string) {
     if (!outputChannel) return;
-    outputChannel.clear(); // Consider if this should always happen or be more conditional
+    outputChannel.clear();
     if (vulnerabilities.length === 0) {
         outputChannel.appendLine(`No vulnerabilities detected by ${providerDisplayName}.`);
         return;
@@ -841,17 +875,14 @@ function formatAndLogVulnerabilities(vulnerabilities: Vulnerability[], providerD
         outputChannel.appendLine(`Vulnerability ID: ${vuln.id}`);
         outputChannel.appendLine(`Description: ${vuln.description}`);
         outputChannel.appendLine(`Severity: ${vuln.severity}`);
-        // Use the actual file name from the vulnerability object
         if (vuln.fileName) {
+            outputChannel.appendLine(`File: ${vuln.fileName}`);
             if (vuln.lineNumber) {
-                outputChannel.appendLine(`File: ${vuln.fileName}:${vuln.lineNumber}`);
-            } else {
-                outputChannel.appendLine(`File: ${vuln.fileName}`);
+                outputChannel.appendLine(`Location: Line ${vuln.lineNumber}`);
             }
         } else {
             outputChannel.appendLine(`File: Unknown`);
         }
-        outputChannel.appendLine(`Location: ${vuln.location}`);
         outputChannel.appendLine(`Recommendation: ${vuln.recommendation}`);
         outputChannel.appendLine(`Detected by: ${vuln.llmProvider || providerDisplayName}`);
     });
