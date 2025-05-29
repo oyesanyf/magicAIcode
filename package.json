@@ -1,0 +1,169 @@
+{
+  "name": "secure-coding-assistant",
+  "displayName": "Secure Coding Assistant",
+  "description": "Secure coding assistant that helps identify and fix security vulnerabilities in your code",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oyesanyf/magicAIcode"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:secure-coding-assistant.scanSelection",
+    "onCommand:secure-coding-assistant.scanFile",
+    "onCommand:secure-coding-assistant.scanFolder",
+    "onCommand:secure-coding-assistant.showOutputChannel",
+    "onCommand:secure-coding-assistant.addOpenAIApiKey",
+    "onCommand:secure-coding-assistant.removeOpenAIApiKey",
+    "onCommand:secure-coding-assistant.addAnthropicApiKey",
+    "onCommand:secure-coding-assistant.removeAnthropicApiKey",
+    "onCommand:secure-coding-assistant.addGoogleApiKey",
+    "onCommand:secure-coding-assistant.removeGoogleApiKey",
+    "onCommand:secure-coding-assistant.addCustomLlmProvider"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "secure-coding-assistant.scanSelection",
+        "title": "Secure Coding: Scan Selection"
+      },
+      {
+        "command": "secure-coding-assistant.scanFile",
+        "title": "Secure Coding: Scan File"
+      },
+      {
+        "command": "secure-coding-assistant.scanFolder",
+        "title": "Secure Coding: Scan Folder"
+      },
+      {
+        "command": "secure-coding-assistant.showOutputChannel",
+        "title": "Secure Coding: Show Output Channel"
+      },
+      {
+        "command": "secure-coding-assistant.addOpenAIApiKey",
+        "title": "Secure Coding: Add OpenAI API Key"
+      },
+      {
+        "command": "secure-coding-assistant.removeOpenAIApiKey",
+        "title": "Secure Coding: Remove OpenAI API Key"
+      },
+      {
+        "command": "secure-coding-assistant.addAnthropicApiKey",
+        "title": "Secure Coding: Add Anthropic API Key"
+      },
+      {
+        "command": "secure-coding-assistant.removeAnthropicApiKey",
+        "title": "Secure Coding: Remove Anthropic API Key"
+      },
+      {
+        "command": "secure-coding-assistant.addGoogleApiKey",
+        "title": "Secure Coding: Add Google API Key"
+      },
+      {
+        "command": "secure-coding-assistant.removeGoogleApiKey",
+        "title": "Secure Coding: Remove Google API Key"
+      },
+      {
+        "command": "secure-coding-assistant.addCustomLlmProvider",
+        "title": "Secure Coding: Add Custom LLM Provider"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "secure-coding-assistant.scanSelection",
+          "group": "navigation@1"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "secure-coding-assistant.scanFile",
+          "group": "navigation@1"
+        },
+        {
+          "command": "secure-coding-assistant.scanFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "secure-coding-assistant.scanFile",
+          "when": "editorLangId"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Secure Coding Assistant",
+      "properties": {
+        "secureCodingAssistant.preferredLlm": {
+          "type": "string",
+          "enum": [
+            "OpenAI",
+            "Anthropic",
+            "Google",
+            "Custom"
+          ],
+          "default": "OpenAI",
+          "description": "Preferred LLM provider for code analysis"
+        },
+        "secureCodingAssistant.openai.model": {
+          "type": "string",
+          "default": "gpt-3.5-turbo",
+          "description": "OpenAI model to use for code analysis"
+        },
+        "secureCodingAssistant.openai.systemPrompt": {
+          "type": "string",
+          "default": "You are a helpful assistant that analyzes code for security vulnerabilities. Identify potential vulnerabilities and suggest remedies.",
+          "description": "System prompt for OpenAI"
+        },
+        "secureCodingAssistant.openai.userPrompt": {
+          "type": "string",
+          "default": "Analyze the following code for security vulnerabilities and suggest fixes:",
+          "description": "User prompt for OpenAI"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.18.0",
+    "@google/generative-ai": "^0.2.0",
+    "axios": "^1.6.2",
+    "openai": "^4.28.0"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.x",
+    "@types/sinon": "^10.0.20",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "sinon": "^17.0.1",
+    "typescript": "^5.3.3"
+  }
+}
