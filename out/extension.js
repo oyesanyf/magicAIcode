@@ -87,7 +87,7 @@ function getScanConfiguration() {
             '.git', '.svn', '.hg', '.vscode', '.vscode-test',
             'venv', 'env', '.env', '__pycache__'
         ]),
-        defaultModel: config.get('defaultModel', 'gpt-3.5-turbo'),
+        defaultModel: config.get('defaultModel', 'gpt-4-turbo-preview'),
         batchSize: config.get('scanBatchSize', 5)
     };
 }
@@ -227,12 +227,16 @@ Provide a comprehensive security analysis following the specified structure. Inc
             case LlmProvider.OpenAI:
                 const openai = new openai_1.default({ apiKey });
                 const openaiResponse = await openai.chat.completions.create({
-                    model: 'gpt-3.5-turbo',
+                    model: 'gpt-4-turbo-preview',
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userPrompt.replace('{languageId}', languageId).replace('{codeSnippet}', codeSnippet) }
                     ],
-                    response_format: { type: 'json_object' }
+                    response_format: { type: 'json_object' },
+                    temperature: 0,
+                    top_p: 1,
+                    frequency_penalty: 0,
+                    presence_penalty: 0
                 });
                 const content = openaiResponse.choices[0]?.message?.content || '[]';
                 // Ensure llmProvider is set in the response
@@ -259,6 +263,8 @@ Provide a comprehensive security analysis following the specified structure. Inc
                     const anthropicResponse = await anthropic.messages.create({
                         model: 'claude-3-opus-20240229',
                         max_tokens: 4000,
+                        temperature: 0,
+                        top_p: 1,
                         messages: [
                             { role: 'user', content: `${systemPrompt}\n\n${userPrompt.replace('{languageId}', languageId).replace('{codeSnippet}', codeSnippet)}` }
                         ]
@@ -292,7 +298,14 @@ Provide a comprehensive security analysis following the specified structure. Inc
             case LlmProvider.Google:
                 try {
                     const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
-                    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+                    const model = genAI.getGenerativeModel({
+                        model: 'gemini-pro',
+                        generationConfig: {
+                            temperature: 0,
+                            topP: 1,
+                            topK: 1
+                        }
+                    });
                     const googleResponse = await model.generateContent([
                         { text: `${systemPrompt}\n\n${userPrompt.replace('{languageId}', languageId).replace('{codeSnippet}', codeSnippet)}` }
                     ]);
@@ -333,7 +346,10 @@ Provide a comprehensive security analysis following the specified structure. Inc
                             { role: 'system', content: systemPrompt },
                             { role: 'user', content: userPrompt.replace('{languageId}', languageId).replace('{codeSnippet}', codeSnippet) }
                         ],
-                        temperature: 0.7,
+                        temperature: 0,
+                        top_p: 1,
+                        frequency_penalty: 0,
+                        presence_penalty: 0,
                         max_tokens: 4000
                     };
                     // Make the API call
@@ -843,13 +859,16 @@ async function analyzeCodeWithOpenAI(apiKey, codeSnippet, languageId, fileName =
         const originalLines = codeSnippet.split(/\r?\n/);
         const openai = new openai_1.default({ apiKey });
         const response = await openai.chat.completions.create({
-            model: model,
+            model: 'gpt-4-turbo-preview',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt.replace('{languageId}', languageId).replace('{codeSnippet}', formattedCode) }
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.1
+            temperature: 0,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0
         });
         const content = response.choices[0]?.message?.content;
         if (content) {
@@ -1193,117 +1212,66 @@ Capabilities:
   * Security advisory analysis
   * Common vulnerability patterns
   * Zero-day vulnerability detection
-- Infrastructure as Code (IaC) Security
-  * Terraform security misconfigurations
-  * CloudFormation template vulnerabilities
-  * Kubernetes manifest security
-  * Ansible playbook security
-  * Infrastructure drift detection
-  * Resource misconfigurations
-  * Access control issues
-  * Network security
-  * Storage security
-  * Compute security
-- API Security
-  * Endpoint vulnerabilities
-  * Authentication/Authorization flaws
-  * Rate limiting issues
-  * API versioning security
-  * API documentation security
-  * Input validation
-  * Output encoding
-  * Error handling
-  * Session management
-  * API key security
-- Mobile Security
-  * Android security issues
-  * iOS security vulnerabilities
-  * Mobile app configuration
-  * Mobile data storage
-  * Mobile authentication
-  * Code signing
-  * App permissions
-  * Network security
+- Container Security Analysis
+  * Docker Compose security
+  * Kubernetes manifests
+  * Podman configurations
+  * Container runtime security
+- Infrastructure Security Analysis
+  * Terraform security
+  * Ansible playbooks
+  * CloudFormation templates
+  * ARM templates
+  * Pulumi configurations
+  * Serverless configurations
+- CI/CD Pipeline Security
+  * GitHub Actions
+  * GitLab CI
+  * Jenkins pipelines
+  * Azure DevOps
+  * CircleCI
+  * Travis CI
+  * Buildkite
+- Database Security Analysis
+  * SQL migrations
+  * Database schemas
+  * Connection strings
+  * Query security
   * Data encryption
-  * Secure communication
-- Cloud Security
-  * AWS security misconfigurations
-  * Azure security issues
-  * GCP security vulnerabilities
-  * Cloud storage security
-  * Cloud IAM issues
-  * Network security
-  * Data protection
-  * Access management
-  * Compliance controls
-  * Resource security
-- CI/CD Security
-  * Pipeline vulnerabilities
-  * Build configuration issues
-  * Deployment security
-  * Artifact security
-  * Secret management
-  * Access control
-  * Environment security
-  * Build security
-  * Test security
-  * Release security
-- Cryptocurrency/Blockchain Security
-  * Smart contract vulnerabilities
-  * Blockchain security issues
-  * Cryptocurrency wallet security
-  * Token security
-  * Consensus mechanism issues
-  * Transaction security
-  * Key management
-  * Network security
-  * Protocol security
-  * Data integrity
-- IoT Security
-  * Device security
-  * Protocol vulnerabilities
-  * Firmware security
-  * IoT communication security
-  * IoT data storage
-  * Access control
-  * Network security
-  * Update security
-  * Physical security
-  * Data protection
-- AI/ML Security
-  * Model poisoning
-  * Data poisoning
-  * Adversarial attacks
-  * Model inversion
-  * Training data security
-  * Model security
-  * Data privacy
-  * Access control
-  * Output security
-  * Resource security
-- Supply Chain Security
-  * Package tampering
-  * Dependency confusion
-  * Build system attacks
-  * Artifact verification
-  * Signing verification
-  * Source verification
-  * Distribution security
-  * Update security
-  * Integrity checks
-  * Trust verification
-- Compliance and Standards
-  * GDPR compliance
-  * HIPAA compliance
-  * PCI DSS requirements
-  * SOC 2 compliance
-  * Industry-specific standards
-  * Data protection
-  * Privacy controls
-  * Security controls
-  * Audit requirements
-  * Documentation requirements
-
+  * Backup security
+  * Access patterns
+- API Security Analysis
+  * OpenAPI/Swagger specs
+  * GraphQL schemas
+  * API gateways
+  * Rate limiting
+  * Authentication flows
+  * Authorization patterns
+  * API versioning
+- Web Security Analysis
+  * Webpack configs
+  * Babel configs
+  * ESLint configs
+  * CSP headers
+  * CORS policies
+  * Cookie security
+  * Session management
+- Mobile Security Analysis
+  * AndroidManifest.xml
+  * Info.plist
+  * App permissions
+  * Deep linking
+  * App signing
+  * ProGuard rules
+  * Mobile networking
+- Cloud Security Analysis
+  * IAM policies
+  * Security groups
+  * Network ACLs
+  * Storage policies
+  * Encryption configs
+  * Backup policies
+  * Disaster recovery
 - Package Management and Build System Analysis
   * Maven (pom.xml) analysis
     - Dependency management
@@ -1596,6 +1564,14 @@ IMPORTANT: You MUST detect and report the following security issues:
     - Update security
     - Lock file security
     - Development security
+41. Container Security Issues
+42. Infrastructure Security Issues
+43. CI/CD Security Issues
+44. Database Security Issues
+45. API Security Issues
+46. Web Security Issues
+47. Mobile Security Issues
+48. Cloud Security Issues
 
 When analyzing code, pay special attention to:
 - Variable assignments containing hash values
@@ -1702,6 +1678,134 @@ Respond in JSON format with the following structure:
             "affectedVersions": "string",
             "fixedVersions": "string"
         }]
+    },
+    "containerSecurityAnalysis": {
+        "runtimeIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "networkIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "infrastructureSecurityAnalysis": {
+        "resourceIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "stateIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "cicdSecurityAnalysis": {
+        "pipelineIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "secretIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "databaseSecurityAnalysis": {
+        "schemaIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "queryIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "apiSecurityAnalysis": {
+        "endpointIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "authIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "webSecurityAnalysis": {
+        "configIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "headerIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "mobileSecurityAnalysis": {
+        "permissionIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "componentIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "cloudSecurityAnalysis": {
+        "iamIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "networkIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
     }
 }`;
     const userPrompt = `Analyze the following {languageId} code for security vulnerabilities and code quality issues. Pay special attention to:
@@ -1746,6 +1850,14 @@ Respond in JSON format with the following structure:
     - Update security
     - Lock file security
     - Development security
+21. Container security
+22. Infrastructure security
+23. CI/CD security
+24. Database security
+25. API security
+26. Web security
+27. Mobile security
+28. Cloud security
 
 IMPORTANT: Look for variable assignments containing hash values and string literals that match hash patterns.
 
