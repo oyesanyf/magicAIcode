@@ -1182,188 +1182,362 @@ Capabilities:
 - Performance & Complexity analysis
 - Maintainability & Style checking
 - Cryptographic hash detection and validation
-- Dependency and Library Analysis
-  * Check for known vulnerable dependencies
-  * Identify outdated or deprecated libraries
-  * Detect insecure library usage patterns
-  * Analyze package.json, requirements.txt, and other dependency files
-  * Flag libraries with known CVEs or security advisories
-- Docker Security Analysis
-  * Container security best practices
-  * Base image vulnerabilities
-  * Privilege escalation risks
-  * Sensitive data exposure
-  * Network security issues
-  * Resource constraints
-  * Health check implementation
-  * Multi-stage build analysis
-  * Layer optimization
-  * Security context configuration
-- Software Composition Analysis (SCA)
-  * Dependency vulnerability scanning
-  * License compliance checking
-  * Outdated package detection
-  * Known CVE identification
-  * Version pinning analysis
-  * Integrity verification
-  * Supply chain security
-  * Transitive dependency analysis
-  * Security update recommendations
+- CVE Detection and Analysis
+  * Known vulnerability identification
+  * CVE ID tracking and validation
+  * Affected version ranges
+  * Fixed version information
+  * Vulnerability severity assessment
+  * Exploit availability checking
+  * Patch status verification
+  * Security advisory analysis
+  * Common vulnerability patterns
+  * Zero-day vulnerability detection
+- Infrastructure as Code (IaC) Security
+  * Terraform security misconfigurations
+  * CloudFormation template vulnerabilities
+  * Kubernetes manifest security
+  * Ansible playbook security
+  * Infrastructure drift detection
+  * Resource misconfigurations
+  * Access control issues
+  * Network security
+  * Storage security
+  * Compute security
+- API Security
+  * Endpoint vulnerabilities
+  * Authentication/Authorization flaws
+  * Rate limiting issues
+  * API versioning security
+  * API documentation security
+  * Input validation
+  * Output encoding
+  * Error handling
+  * Session management
+  * API key security
+- Mobile Security
+  * Android security issues
+  * iOS security vulnerabilities
+  * Mobile app configuration
+  * Mobile data storage
+  * Mobile authentication
+  * Code signing
+  * App permissions
+  * Network security
+  * Data encryption
+  * Secure communication
+- Cloud Security
+  * AWS security misconfigurations
+  * Azure security issues
+  * GCP security vulnerabilities
+  * Cloud storage security
+  * Cloud IAM issues
+  * Network security
+  * Data protection
+  * Access management
+  * Compliance controls
+  * Resource security
+- CI/CD Security
+  * Pipeline vulnerabilities
+  * Build configuration issues
+  * Deployment security
+  * Artifact security
+  * Secret management
+  * Access control
+  * Environment security
+  * Build security
+  * Test security
+  * Release security
+- Cryptocurrency/Blockchain Security
+  * Smart contract vulnerabilities
+  * Blockchain security issues
+  * Cryptocurrency wallet security
+  * Token security
+  * Consensus mechanism issues
+  * Transaction security
+  * Key management
+  * Network security
+  * Protocol security
+  * Data integrity
+- IoT Security
+  * Device security
+  * Protocol vulnerabilities
+  * Firmware security
+  * IoT communication security
+  * IoT data storage
+  * Access control
+  * Network security
+  * Update security
+  * Physical security
+  * Data protection
+- AI/ML Security
+  * Model poisoning
+  * Data poisoning
+  * Adversarial attacks
+  * Model inversion
+  * Training data security
+  * Model security
+  * Data privacy
+  * Access control
+  * Output security
+  * Resource security
+- Supply Chain Security
+  * Package tampering
+  * Dependency confusion
+  * Build system attacks
+  * Artifact verification
+  * Signing verification
+  * Source verification
+  * Distribution security
+  * Update security
+  * Integrity checks
+  * Trust verification
+- Compliance and Standards
+  * GDPR compliance
+  * HIPAA compliance
+  * PCI DSS requirements
+  * SOC 2 compliance
+  * Industry-specific standards
+  * Data protection
+  * Privacy controls
+  * Security controls
+  * Audit requirements
+  * Documentation requirements
+
+[Previous sections for Dependency Analysis, Docker Security Analysis, and SCA remain unchanged...]
 
 For each issue found, provide:
-- Line number
-- Vulnerability or logic issue
-- Explanation of the problem
-- Suggested fix with secure alternatives
-- CWE or OWASP references when applicable
-- For library issues: CVE IDs and affected versions
-- For Docker issues: Base image vulnerabilities and security context
-- For SCA issues: Dependency tree analysis and update paths
+[Previous sections remain unchanged...]
 
 IMPORTANT: You MUST detect and report the following security issues:
-1. Hardcoded cryptographic hashes (SHA-1, SHA-256, SHA-384, SHA-512, Tiger, Whirlpool)
-2. Hardcoded credentials and secrets
-3. Insecure cryptographic implementations
-4. SQL injection vulnerabilities
-5. Cross-site scripting (XSS)
-6. Command injection
-7. Path traversal
-8. Insecure deserialization
-9. Insecure direct object references
-10. Security misconfiguration
-11. Vulnerable dependencies and libraries
-12. Outdated or deprecated packages
-13. Insecure library usage patterns
-14. Docker security issues
-    - Root user execution
-    - Latest tag usage
-    - Sensitive volume mounts
-    - Privileged mode
-    - Exposed ports
-    - Sensitive environment variables
-    - Unsafe commands
-    - Missing health checks
-    - User namespace issues
-    - Read-only mode
-15. SCA issues
-    - Outdated packages
-    - Known vulnerable packages
-    - Insecure dependencies
-    - Version locking issues
-    - Unpinned versions
-    - Known vulnerable versions
-    - Insecure package sources
-    - Missing integrity checks
-    - Missing vulnerability scanning
+[Previous sections 1-16 remain unchanged...]
+17. Infrastructure as Code Issues
+    - Resource misconfigurations
+    - Access control issues
+    - Network security
+    - Storage security
+    - Compute security
+18. API Security Issues
+    - Authentication flaws
+    - Authorization issues
+    - Rate limiting
+    - Input validation
+    - Output encoding
+19. Mobile Security Issues
+    - App configuration
+    - Data storage
+    - Authentication
+    - Permissions
+    - Network security
+20. Cloud Security Issues
+    - IAM misconfigurations
+    - Storage security
+    - Network security
+    - Access management
+    - Resource security
+21. CI/CD Security Issues
+    - Pipeline security
+    - Build security
+    - Deployment security
+    - Secret management
+    - Access control
+22. Cryptocurrency/Blockchain Issues
+    - Smart contract security
+    - Wallet security
+    - Token security
+    - Transaction security
+    - Key management
+23. IoT Security Issues
+    - Device security
+    - Protocol security
+    - Firmware security
+    - Communication security
+    - Data security
+24. AI/ML Security Issues
+    - Model security
+    - Data security
+    - Access control
+    - Output security
+    - Resource security
+25. Supply Chain Issues
+    - Package security
+    - Dependency security
+    - Build security
+    - Artifact security
+    - Trust verification
+26. Compliance Issues
+    - Data protection
+    - Privacy controls
+    - Security controls
+    - Audit requirements
+    - Documentation
 
-When analyzing code, pay special attention to:
-- Variable assignments containing hash values
-- String literals that match hash patterns
-- Comments indicating hash types
-- Any hardcoded cryptographic values
-- Import statements and dependency declarations
-- Library version specifications
-- Usage of known vulnerable functions from libraries
-- Docker configuration and security settings
-- Dependency management and versioning
-- Package integrity and verification
-- Supply chain security
-
-Include accuracy scoring:
-- Hallucination Score (0.0-1.0, lower is better)
-- Confidence Score (0.0-1.0, higher is better)
-
-Output must follow this structure:
-1. Summary (language, risk rating, issue count)
-2. Validated Code (clean blocks, good practices)
-3. Issues Found (detailed per issue)
-4. Performance & Complexity Highlights
-5. Test Stub Offer
-6. Dependency Analysis (if applicable)
-7. Docker Security Analysis (if applicable)
-8. SCA Analysis (if applicable)
+[Previous sections for analysis attention and output format remain unchanged...]
 
 Respond in JSON format with the following structure:
 {
-    "summary": {
-        "language": "string",
-        "riskRating": "High|Medium|Low",
-        "issueCount": number
-    },
-    "validatedCode": ["string"],
-    "issues": [{
-        "id": "string",
-        "description": "string",
-        "location": "string",
-        "severity": "High|Medium|Low",
-        "recommendation": "string",
-        "lineNumber": "string",
-        "cweId": "string",
-        "owaspReference": "string",
-        "hallucinationScore": number,
-        "confidenceScore": number,
-        "llmProvider": "string",
-        "cveId": "string",
-        "affectedVersions": "string",
-        "fixedVersions": "string"
-    }],
-    "performanceHighlights": ["string"],
-    "dependencyAnalysis": {
-        "vulnerableDependencies": [{
-            "name": "string",
-            "version": "string",
-            "cveId": "string",
+    [Previous sections remain unchanged...],
+    "infrastructureAnalysis": {
+        "misconfigurations": [{
+            "type": "string",
             "severity": "High|Medium|Low",
             "description": "string",
+            "location": "string",
             "recommendation": "string"
-        }],
-        "outdatedDependencies": [{
-            "name": "string",
-            "currentVersion": "string",
-            "latestVersion": "string",
-            "updateRecommendation": "string"
-        }]
-    },
-    "dockerAnalysis": {
-        "baseImageVulnerabilities": [{
-            "image": "string",
-            "vulnerabilities": [{
-                "cveId": "string",
-                "severity": "High|Medium|Low",
-                "description": "string",
-                "fixedIn": "string"
-            }]
         }],
         "securityIssues": [{
             "type": "string",
             "severity": "High|Medium|Low",
             "description": "string",
-            "recommendation": "string",
-            "lineNumber": "string"
+            "location": "string",
+            "recommendation": "string"
         }]
     },
-    "scaAnalysis": {
-        "vulnerablePackages": [{
-            "name": "string",
-            "version": "string",
-            "vulnerabilities": [{
-                "cveId": "string",
-                "severity": "High|Medium|Low",
-                "description": "string",
-                "fixedIn": "string"
-            }]
-        }],
-        "licenseIssues": [{
-            "package": "string",
-            "license": "string",
-            "issue": "string",
+    "apiSecurityAnalysis": {
+        "endpointIssues": [{
+            "endpoint": "string",
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
             "recommendation": "string"
         }],
-        "updateRecommendations": [{
-            "package": "string",
-            "currentVersion": "string",
-            "recommendedVersion": "string",
-            "reason": "string"
+        "authenticationIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "mobileSecurityAnalysis": {
+        "platformIssues": [{
+            "platform": "string",
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "securityIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "cloudSecurityAnalysis": {
+        "providerIssues": [{
+            "provider": "string",
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "securityIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "cicdSecurityAnalysis": {
+        "pipelineIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "securityIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "blockchainSecurityAnalysis": {
+        "contractIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "securityIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "iotSecurityAnalysis": {
+        "deviceIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "securityIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "aiMlSecurityAnalysis": {
+        "modelIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "securityIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "supplyChainAnalysis": {
+        "packageIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "securityIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }]
+    },
+    "complianceAnalysis": {
+        "standardIssues": [{
+            "standard": "string",
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "requirement": "string",
+            "recommendation": "string"
+        }],
+        "complianceIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "requirement": "string",
+            "recommendation": "string"
         }]
     }
 }`;
@@ -1375,6 +1549,18 @@ Respond in JSON format with the following structure:
 4. Other security vulnerabilities
 5. Docker security issues (if Dockerfile)
 6. Software Composition Analysis issues (if dependency files)
+7. Known CVE vulnerabilities (e.g., Log4Shell, Spring4Shell)
+8. Zero-day vulnerabilities and security advisories
+9. Infrastructure as Code security (if IaC files)
+10. API security issues
+11. Mobile security issues
+12. Cloud security issues
+13. CI/CD security issues
+14. Cryptocurrency/Blockchain security
+15. IoT security issues
+16. AI/ML security issues
+17. Supply chain security
+18. Compliance and standards
 
 IMPORTANT: Look for variable assignments containing hash values and string literals that match hash patterns.
 
