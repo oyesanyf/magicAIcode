@@ -1304,81 +1304,381 @@ Capabilities:
   * Audit requirements
   * Documentation requirements
 
-[Previous sections for Dependency Analysis, Docker Security Analysis, and SCA remain unchanged...]
+- Package Management and Build System Analysis
+  * Maven (pom.xml) analysis
+    - Dependency management
+    - Plugin security
+    - Repository security
+    - Build configuration
+    - Profile security
+    - Property management
+    - Version management
+    - Scope analysis
+    - Transitive dependencies
+    - Build lifecycle security
+  * Gradle (build.gradle, settings.gradle) analysis
+    - Dependency management
+    - Plugin security
+    - Repository security
+    - Build configuration
+    - Task security
+    - Version catalogs
+    - Dependency constraints
+    - Build script security
+    - Transitive dependencies
+    - Build optimization
+  * npm (package.json) analysis
+    - Dependency management
+    - Script security
+    - Configuration security
+    - Workspace security
+    - Version management
+    - Package integrity
+    - Access control
+    - Registry security
+    - Transitive dependencies
+    - Build security
+  * pip (requirements.txt, setup.py) analysis
+    - Dependency management
+    - Version constraints
+    - Index security
+    - Package security
+    - Environment security
+    - Build security
+    - Distribution security
+    - Access control
+    - Transitive dependencies
+    - Package integrity
+  * Ruby (Gemfile) analysis
+    - Dependency management
+    - Source security
+    - Version constraints
+    - Group security
+    - Platform security
+    - Gem security
+    - Build security
+    - Access control
+    - Transitive dependencies
+    - Package integrity
+  * Composer (composer.json) analysis
+    - Dependency management
+    - Repository security
+    - Version constraints
+    - Script security
+    - Autoload security
+    - Platform security
+    - Package security
+    - Access control
+    - Transitive dependencies
+    - Build security
+  * NuGet (packages.config, .csproj) analysis
+    - Package management
+    - Source security
+    - Version constraints
+    - Framework security
+    - Build security
+    - Package integrity
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Update security
+  * Cargo (Cargo.toml) analysis
+    - Dependency management
+    - Registry security
+    - Version constraints
+    - Feature security
+    - Build security
+    - Package integrity
+    - Access control
+    - Transitive dependencies
+    - Profile security
+    - Workspace security
+  * Yarn (yarn.lock) analysis
+    - Dependency management
+    - Integrity verification
+    - Version constraints
+    - Workspace security
+    - Access control
+    - Registry security
+    - Package security
+    - Transitive dependencies
+    - Build security
+    - Configuration security
+  * Go Modules (go.mod) analysis
+    - Dependency management
+    - Version constraints
+    - Module security
+    - Proxy security
+    - Access control
+    - Package integrity
+    - Build security
+    - Transitive dependencies
+    - Workspace security
+    - Configuration security
+  * Build System Security
+    - Build script analysis
+    - Task security
+    - Plugin security
+    - Configuration security
+    - Environment security
+    - Access control
+    - Resource security
+    - Output security
+    - Cache security
+    - Artifact security
+  * Conan (conanfile.txt, conanfile.py) analysis
+    - Dependency management
+    - Profile security
+    - Generator security
+    - Package security
+    - Build security
+    - Package integrity
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Remote security
+  * Poetry (pyproject.toml) analysis
+    - Dependency management
+    - Virtual environment security
+    - Build system security
+    - Package security
+    - Script security
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Source security
+    - Version constraints
+  * SBT (build.sbt) analysis
+    - Dependency management
+    - Plugin security
+    - Task security
+    - Build configuration
+    - Project security
+    - Access control
+    - Transitive dependencies
+    - Version management
+    - Repository security
+    - Build optimization
+  * Leiningen (project.clj) analysis
+    - Dependency management
+    - Profile security
+    - Plugin security
+    - Build security
+    - Package security
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Repository security
+    - Version management
+  * Mix (mix.exs) analysis
+    - Dependency management
+    - Application security
+    - Environment security
+    - Build security
+    - Package security
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Version constraints
+    - Release security
+  * Cabal (cabal.project) analysis
+    - Dependency management
+    - Package security
+    - Build security
+    - Flag security
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Version constraints
+    - Repository security
+    - Distribution security
+  * Paket (paket.dependencies) analysis
+    - Dependency management
+    - Source security
+    - Version constraints
+    - Framework security
+    - Package security
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Lock file security
+    - Update security
+  * Shards (shard.yml) analysis
+    - Dependency management
+    - Version constraints
+    - Script security
+    - Package security
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Source security
+    - Build security
+    - Development security
+  * Dub (dub.json) analysis
+    - Dependency management
+    - Build type security
+    - Configuration security
+    - Package security
+    - Access control
+    - Transitive dependencies
+    - Version constraints
+    - Source security
+    - Build security
+    - Target security
+  * Vcpkg (vcpkg.json) analysis
+    - Dependency management
+    - Port security
+    - Build security
+    - Package security
+    - Access control
+    - Transitive dependencies
+    - Configuration security
+    - Version constraints
+    - Feature security
+    - Overlay security
 
 For each issue found, provide:
-[Previous sections remain unchanged...]
+- Line number
+- Vulnerability or logic issue
+- Explanation of the problem
+- Suggested fix with secure alternatives
+- CWE or OWASP references when applicable
+- For library issues: CVE IDs and affected versions
 
 IMPORTANT: You MUST detect and report the following security issues:
-[Previous sections 1-16 remain unchanged...]
-17. Infrastructure as Code Issues
-    - Resource misconfigurations
-    - Access control issues
-    - Network security
-    - Storage security
-    - Compute security
-18. API Security Issues
-    - Authentication flaws
-    - Authorization issues
-    - Rate limiting
-    - Input validation
-    - Output encoding
-19. Mobile Security Issues
-    - App configuration
-    - Data storage
-    - Authentication
-    - Permissions
-    - Network security
-20. Cloud Security Issues
-    - IAM misconfigurations
-    - Storage security
-    - Network security
-    - Access management
-    - Resource security
-21. CI/CD Security Issues
-    - Pipeline security
-    - Build security
-    - Deployment security
-    - Secret management
+1. Hardcoded cryptographic hashes (SHA-1, SHA-256, SHA-384, SHA-512, Tiger, Whirlpool)
+2. Hardcoded credentials and secrets
+3. Insecure cryptographic implementations
+4. SQL injection vulnerabilities
+5. Cross-site scripting (XSS)
+6. Command injection
+7. Path traversal
+8. Insecure deserialization
+9. Insecure direct object references
+10. Security misconfiguration
+11. Vulnerable dependencies and libraries
+12. Outdated or deprecated packages
+13. Insecure library usage patterns
+14. Package management issues
+15. Version conflicts
+16. Insecure sources
+17. Missing integrity checks
+18. Outdated packages
+19. Malicious packages
+20. License violations
+21. Access control issues
+22. Build security issues
+23. Configuration security
+24. Dependency vulnerabilities
+25. Dependency confusion
+26. Build system attacks
+27. Artifact verification
+28. Signing verification
+29. Source verification
+30. Distribution security
+31. Update security
+32. Integrity checks
+33. Trust verification
+34. Compliance and standards
+35. Data protection
+36. Privacy controls
+37. Security controls
+38. Audit requirements
+39. Documentation requirements
+40. Package Management System Issues
+    - Dependency resolution
+    - Version compatibility
+    - Build system security
+    - Package integrity
     - Access control
-22. Cryptocurrency/Blockchain Issues
-    - Smart contract security
-    - Wallet security
-    - Token security
-    - Transaction security
-    - Key management
-23. IoT Security Issues
-    - Device security
-    - Protocol security
-    - Firmware security
-    - Communication security
-    - Data security
-24. AI/ML Security Issues
-    - Model security
-    - Data security
-    - Access control
-    - Output security
-    - Resource security
-25. Supply Chain Issues
-    - Package security
-    - Dependency security
-    - Build security
-    - Artifact security
-    - Trust verification
-26. Compliance Issues
-    - Data protection
-    - Privacy controls
-    - Security controls
-    - Audit requirements
-    - Documentation
+    - Configuration security
+    - Repository security
+    - Update security
+    - Lock file security
+    - Development security
 
-[Previous sections for analysis attention and output format remain unchanged...]
+When analyzing code, pay special attention to:
+- Variable assignments containing hash values
+- String literals that match hash patterns
+- Comments indicating hash types
+- Any hardcoded cryptographic values
+- Import statements and dependency declarations
+- Library version specifications
+- Usage of known vulnerable functions from libraries
+
+Include accuracy scoring:
+- Hallucination Score (0.0-1.0, lower is better)
+- Confidence Score (0.0-1.0, higher is better)
+
+Output must follow this structure:
+1. Summary (language, risk rating, issue count)
+2. Validated Code (clean blocks, good practices)
+3. Issues Found (detailed per issue)
+4. Performance & Complexity Highlights
+5. Test Stub Offer
+6. Dependency Analysis (if applicable)
 
 Respond in JSON format with the following structure:
 {
-    [Previous sections remain unchanged...],
-    "infrastructureAnalysis": {
-        "misconfigurations": [{
+    "summary": {
+        "language": "string",
+        "riskRating": "High|Medium|Low",
+        "issueCount": number
+    },
+    "validatedCode": ["string"],
+    "issues": [{
+        "id": "string",
+        "description": "string",
+        "location": "string",
+        "severity": "High|Medium|Low",
+        "recommendation": "string",
+        "lineNumber": "string",
+        "cweId": "string",
+        "owaspReference": "string",
+        "hallucinationScore": number,
+        "confidenceScore": number,
+        "llmProvider": "string",
+        "cveId": "string",
+        "affectedVersions": "string",
+        "fixedVersions": "string"
+    }],
+    "performanceHighlights": ["string"],
+    "dependencyAnalysis": {
+        "vulnerableDependencies": [{
+            "name": "string",
+            "version": "string",
+            "cveId": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "recommendation": "string"
+        }],
+        "outdatedDependencies": [{
+            "name": "string",
+            "currentVersion": "string",
+            "latestVersion": "string",
+            "updateRecommendation": "string"
+        }]
+    },
+    "packageManagementAnalysis": {
+        "buildSystemIssues": [{
+            "system": "string",
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string"
+        }],
+        "dependencyIssues": [{
+            "package": "string",
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "location": "string",
+            "recommendation": "string",
+            "affectedVersions": "string",
+            "fixedVersions": "string"
+        }],
+        "configurationIssues": [{
             "type": "string",
             "severity": "High|Medium|Low",
             "description": "string",
@@ -1391,153 +1691,16 @@ Respond in JSON format with the following structure:
             "description": "string",
             "location": "string",
             "recommendation": "string"
-        }]
-    },
-    "apiSecurityAnalysis": {
-        "endpointIssues": [{
-            "endpoint": "string",
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "recommendation": "string"
         }],
-        "authenticationIssues": [{
+        "systemSpecificIssues": [{
+            "system": "string",
             "type": "string",
             "severity": "High|Medium|Low",
             "description": "string",
             "location": "string",
-            "recommendation": "string"
-        }]
-    },
-    "mobileSecurityAnalysis": {
-        "platformIssues": [{
-            "platform": "string",
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }],
-        "securityIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }]
-    },
-    "cloudSecurityAnalysis": {
-        "providerIssues": [{
-            "provider": "string",
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }],
-        "securityIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }]
-    },
-    "cicdSecurityAnalysis": {
-        "pipelineIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }],
-        "securityIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }]
-    },
-    "blockchainSecurityAnalysis": {
-        "contractIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }],
-        "securityIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }]
-    },
-    "iotSecurityAnalysis": {
-        "deviceIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }],
-        "securityIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }]
-    },
-    "aiMlSecurityAnalysis": {
-        "modelIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }],
-        "securityIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }]
-    },
-    "supplyChainAnalysis": {
-        "packageIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }],
-        "securityIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "location": "string",
-            "recommendation": "string"
-        }]
-    },
-    "complianceAnalysis": {
-        "standardIssues": [{
-            "standard": "string",
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "requirement": "string",
-            "recommendation": "string"
-        }],
-        "complianceIssues": [{
-            "type": "string",
-            "severity": "High|Medium|Low",
-            "description": "string",
-            "requirement": "string",
-            "recommendation": "string"
+            "recommendation": "string",
+            "affectedVersions": "string",
+            "fixedVersions": "string"
         }]
     }
 }`;
@@ -1561,6 +1724,28 @@ Respond in JSON format with the following structure:
 16. AI/ML security issues
 17. Supply chain security
 18. Compliance and standards
+19. Package management and build system security
+    - Dependency vulnerabilities
+    - Version conflicts
+    - Insecure sources
+    - Missing integrity checks
+    - Outdated packages
+    - Malicious packages
+    - License violations
+    - Access control issues
+    - Build security issues
+    - Configuration security
+20. Package management system security
+    - Dependency resolution
+    - Version compatibility
+    - Build system security
+    - Package integrity
+    - Access control
+    - Configuration security
+    - Repository security
+    - Update security
+    - Lock file security
+    - Development security
 
 IMPORTANT: Look for variable assignments containing hash values and string literals that match hash patterns.
 
