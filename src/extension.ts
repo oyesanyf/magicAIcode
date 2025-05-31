@@ -545,6 +545,32 @@ const securityPatterns = {
         'UnsafeLock': /lock\(|synchronized/,
         'UnsafeWait': /wait\(|sleep\(/,
         'UnsafeNotify': /notify\(|notifyAll\(/
+    },
+    // Docker Security Patterns
+    'DockerVulnerabilities': {
+        'RootUser': /USER\s+root|RUN\s+useradd\s+-u\s+0/,
+        'LatestTag': /FROM\s+.*:latest/,
+        'SensitiveMount': /VOLUME\s+.*\/etc\/|VOLUME\s+.*\/var\/|VOLUME\s+.*\/usr\/|VOLUME\s+.*\/root\//,
+        'PrivilegedMode': /--privileged|privileged:\s*true/,
+        'ExposedPorts': /EXPOSE\s+\d+/,
+        'SensitiveEnv': /ENV\s+.*PASSWORD|ENV\s+.*SECRET|ENV\s+.*KEY|ENV\s+.*TOKEN/,
+        'UnsafeCommands': /RUN\s+wget\s+http:|RUN\s+curl\s+http:|RUN\s+apt-get\s+update/,
+        'NoHealthCheck': /HEALTHCHECK\s+NONE/,
+        'NoUserNamespace': /--userns=host/,
+        'NoReadOnly': /--read-only=false/
+    },
+
+    // SCA (Software Composition Analysis) Patterns
+    'SCAVulnerabilities': {
+        'OutdatedPackage': /version\s*=\s*["']\d+\.\d+\.\d+["']/,
+        'KnownVulnerablePackage': /package-lock\.json|yarn\.lock|requirements\.txt|pom\.xml|build\.gradle/,
+        'InsecureDependency': /dependencies\s*{|devDependencies\s*{|requirements\s*=/,
+        'NoVersionLock': /^\s*[^#].*[~^]/,
+        'UnpinnedVersion': /version\s*=\s*["']\*["']|version\s*=\s*["']latest["']/,
+        'KnownVulnerableVersion': /version\s*=\s*["']\d+\.\d+\.\d+["']/,
+        'InsecureSource': /registry\.npmjs\.org|pypi\.org|maven\.apache\.org/,
+        'NoIntegrityCheck': /integrity\s*=|sha512\s*=|sha256\s*=/,
+        'NoVulnerabilityScan': /audit\s*=|security\s*scan\s*=|vulnerability\s*check\s*=/
     }
 };
 
@@ -606,14 +632,16 @@ function detectSecurityVulnerabilities(code: string): Vulnerability[] {
     return vulnerabilities;
 }
 
-// Helper function to determine severity
+// Update getSeverityForIssue to include Docker and SCA severities
 function getSeverityForIssue(category: string, issueType: string): "High" | "Medium" | "Low" {
     const highSeverityIssues = [
         'HardcodedHashes', 'HardcodedCredentials', 'SQLInjection', 'CommandInjection',
-        'UnsafeDeserialization', 'BufferOverflow'
+        'UnsafeDeserialization', 'BufferOverflow', 'RootUser', 'PrivilegedMode',
+        'KnownVulnerablePackage', 'InsecureDependency'
     ];
     const mediumSeverityIssues = [
-        'XSS', 'PathTraversal', 'InsecureCrypto'
+        'XSS', 'PathTraversal', 'InsecureCrypto', 'LatestTag', 'SensitiveMount',
+        'ExposedPorts', 'SensitiveEnv', 'OutdatedPackage', 'NoVersionLock'
     ];
 
     if (highSeverityIssues.includes(issueType)) return "High";
@@ -621,7 +649,7 @@ function getSeverityForIssue(category: string, issueType: string): "High" | "Med
     return "Low";
 }
 
-// Helper function to get recommendations
+// Update getRecommendationForIssue to include Docker and SCA recommendations
 function getRecommendationForIssue(category: string, issueType: string): string {
     const recommendations: Record<string, string> = {
         'HardcodedHashes': 'Remove hardcoded hash values from variable assignments. Instead, use a secure configuration management system or environment variables to store sensitive values. Consider using a secrets management solution.',
@@ -633,13 +661,34 @@ function getRecommendationForIssue(category: string, issueType: string): string 
         'PathTraversal': 'Validate and sanitize file paths. Use proper path resolution functions.',
         'UnsafeDeserialization': 'Use safe deserialization methods and validate input data.',
         'BufferOverflow': 'Use safe string handling functions and bounds checking.',
-        'DebugCode': 'Remove debug code before production deployment.'
+        'DebugCode': 'Remove debug code before production deployment.',
+        // Docker recommendations
+        'RootUser': 'Avoid running containers as root. Create and use a non-root user.',
+        'LatestTag': 'Avoid using :latest tag. Pin to specific versions for better security and reproducibility.',
+        'SensitiveMount': 'Review and restrict volume mounts to prevent sensitive data exposure.',
+        'PrivilegedMode': 'Avoid running containers in privileged mode. Use specific capabilities instead.',
+        'ExposedPorts': 'Only expose necessary ports and use non-standard ports when possible.',
+        'SensitiveEnv': 'Avoid storing sensitive information in environment variables. Use secrets management.',
+        'UnsafeCommands': 'Avoid downloading and executing untrusted content. Use multi-stage builds.',
+        'NoHealthCheck': 'Implement health checks to ensure container health monitoring.',
+        'NoUserNamespace': 'Enable user namespace remapping for better security isolation.',
+        'NoReadOnly': 'Run containers in read-only mode when possible to prevent modifications.',
+        // SCA recommendations
+        'OutdatedPackage': 'Update packages to their latest secure versions.',
+        'KnownVulnerablePackage': 'Replace vulnerable packages with secure alternatives.',
+        'InsecureDependency': 'Review and update dependencies to secure versions.',
+        'NoVersionLock': 'Pin dependency versions to specific releases.',
+        'UnpinnedVersion': 'Avoid using wildcard or latest versions. Pin to specific versions.',
+        'KnownVulnerableVersion': 'Update to a version that addresses known vulnerabilities.',
+        'InsecureSource': 'Use trusted package sources and verify package integrity.',
+        'NoIntegrityCheck': 'Implement integrity checks for downloaded packages.',
+        'NoVulnerabilityScan': 'Implement automated vulnerability scanning in CI/CD pipeline.'
     };
 
     return recommendations[issueType] || 'Review and fix the identified security issue.';
 }
 
-// Helper function to get CWE IDs
+// Update getCWEForIssue to include Docker and SCA CWEs
 function getCWEForIssue(category: string, issueType: string): string {
     const cweMap: Record<string, string> = {
         'HardcodedHashes': 'CWE-798',
@@ -651,13 +700,34 @@ function getCWEForIssue(category: string, issueType: string): string {
         'PathTraversal': 'CWE-22',
         'UnsafeDeserialization': 'CWE-502',
         'BufferOverflow': 'CWE-120',
-        'DebugCode': 'CWE-489'
+        'DebugCode': 'CWE-489',
+        // Docker CWEs
+        'RootUser': 'CWE-250',
+        'LatestTag': 'CWE-1021',
+        'SensitiveMount': 'CWE-552',
+        'PrivilegedMode': 'CWE-250',
+        'ExposedPorts': 'CWE-200',
+        'SensitiveEnv': 'CWE-798',
+        'UnsafeCommands': 'CWE-78',
+        'NoHealthCheck': 'CWE-1021',
+        'NoUserNamespace': 'CWE-250',
+        'NoReadOnly': 'CWE-250',
+        // SCA CWEs
+        'OutdatedPackage': 'CWE-1021',
+        'KnownVulnerablePackage': 'CWE-1021',
+        'InsecureDependency': 'CWE-1021',
+        'NoVersionLock': 'CWE-1021',
+        'UnpinnedVersion': 'CWE-1021',
+        'KnownVulnerableVersion': 'CWE-1021',
+        'InsecureSource': 'CWE-829',
+        'NoIntegrityCheck': 'CWE-494',
+        'NoVulnerabilityScan': 'CWE-1021'
     };
 
     return cweMap[issueType] || '';
 }
 
-// Helper function to get OWASP references
+// Update getOWASPReferenceForIssue to include Docker and SCA references
 function getOWASPReferenceForIssue(category: string, issueType: string): string {
     const owaspMap: Record<string, string> = {
         'HardcodedHashes': 'A7:2017-Identification and Authentication Failures',
@@ -669,7 +739,28 @@ function getOWASPReferenceForIssue(category: string, issueType: string): string 
         'PathTraversal': 'A5:2017-Broken Access Control',
         'UnsafeDeserialization': 'A8:2017-Insecure Deserialization',
         'BufferOverflow': 'A1:2017-Injection',
-        'DebugCode': 'A9:2017-Using Components with Known Vulnerabilities'
+        'DebugCode': 'A9:2017-Using Components with Known Vulnerabilities',
+        // Docker OWASP references
+        'RootUser': 'A5:2017-Broken Access Control',
+        'LatestTag': 'A9:2017-Using Components with Known Vulnerabilities',
+        'SensitiveMount': 'A5:2017-Broken Access Control',
+        'PrivilegedMode': 'A5:2017-Broken Access Control',
+        'ExposedPorts': 'A5:2017-Broken Access Control',
+        'SensitiveEnv': 'A3:2017-Sensitive Data Exposure',
+        'UnsafeCommands': 'A8:2017-Insecure Deserialization',
+        'NoHealthCheck': 'A9:2017-Using Components with Known Vulnerabilities',
+        'NoUserNamespace': 'A5:2017-Broken Access Control',
+        'NoReadOnly': 'A5:2017-Broken Access Control',
+        // SCA OWASP references
+        'OutdatedPackage': 'A9:2017-Using Components with Known Vulnerabilities',
+        'KnownVulnerablePackage': 'A9:2017-Using Components with Known Vulnerabilities',
+        'InsecureDependency': 'A9:2017-Using Components with Known Vulnerabilities',
+        'NoVersionLock': 'A9:2017-Using Components with Known Vulnerabilities',
+        'UnpinnedVersion': 'A9:2017-Using Components with Known Vulnerabilities',
+        'KnownVulnerableVersion': 'A9:2017-Using Components with Known Vulnerabilities',
+        'InsecureSource': 'A9:2017-Using Components with Known Vulnerabilities',
+        'NoIntegrityCheck': 'A8:2017-Insecure Deserialization',
+        'NoVulnerabilityScan': 'A9:2017-Using Components with Known Vulnerabilities'
     };
 
     return owaspMap[issueType] || '';
@@ -1159,6 +1250,27 @@ Capabilities:
   * Detect insecure library usage patterns
   * Analyze package.json, requirements.txt, and other dependency files
   * Flag libraries with known CVEs or security advisories
+- Docker Security Analysis
+  * Container security best practices
+  * Base image vulnerabilities
+  * Privilege escalation risks
+  * Sensitive data exposure
+  * Network security issues
+  * Resource constraints
+  * Health check implementation
+  * Multi-stage build analysis
+  * Layer optimization
+  * Security context configuration
+- Software Composition Analysis (SCA)
+  * Dependency vulnerability scanning
+  * License compliance checking
+  * Outdated package detection
+  * Known CVE identification
+  * Version pinning analysis
+  * Integrity verification
+  * Supply chain security
+  * Transitive dependency analysis
+  * Security update recommendations
 
 For each issue found, provide:
 - Line number
@@ -1167,6 +1279,8 @@ For each issue found, provide:
 - Suggested fix with secure alternatives
 - CWE or OWASP references when applicable
 - For library issues: CVE IDs and affected versions
+- For Docker issues: Base image vulnerabilities and security context
+- For SCA issues: Dependency tree analysis and update paths
 
 IMPORTANT: You MUST detect and report the following security issues:
 1. Hardcoded cryptographic hashes (SHA-1, SHA-256, SHA-384, SHA-512, Tiger, Whirlpool)
@@ -1182,6 +1296,27 @@ IMPORTANT: You MUST detect and report the following security issues:
 11. Vulnerable dependencies and libraries
 12. Outdated or deprecated packages
 13. Insecure library usage patterns
+14. Docker security issues
+    - Root user execution
+    - Latest tag usage
+    - Sensitive volume mounts
+    - Privileged mode
+    - Exposed ports
+    - Sensitive environment variables
+    - Unsafe commands
+    - Missing health checks
+    - User namespace issues
+    - Read-only mode
+15. SCA issues
+    - Outdated packages
+    - Known vulnerable packages
+    - Insecure dependencies
+    - Version locking issues
+    - Unpinned versions
+    - Known vulnerable versions
+    - Insecure package sources
+    - Missing integrity checks
+    - Missing vulnerability scanning
 
 When analyzing code, pay special attention to:
 - Variable assignments containing hash values
@@ -1191,6 +1326,10 @@ When analyzing code, pay special attention to:
 - Import statements and dependency declarations
 - Library version specifications
 - Usage of known vulnerable functions from libraries
+- Docker configuration and security settings
+- Dependency management and versioning
+- Package integrity and verification
+- Supply chain security
 
 Include accuracy scoring:
 - Hallucination Score (0.0-1.0, lower is better)
@@ -1203,6 +1342,8 @@ Output must follow this structure:
 4. Performance & Complexity Highlights
 5. Test Stub Offer
 6. Dependency Analysis (if applicable)
+7. Docker Security Analysis (if applicable)
+8. SCA Analysis (if applicable)
 
 Respond in JSON format with the following structure:
 {
@@ -1244,6 +1385,48 @@ Respond in JSON format with the following structure:
             "latestVersion": "string",
             "updateRecommendation": "string"
         }]
+    },
+    "dockerAnalysis": {
+        "baseImageVulnerabilities": [{
+            "image": "string",
+            "vulnerabilities": [{
+                "cveId": "string",
+                "severity": "High|Medium|Low",
+                "description": "string",
+                "fixedIn": "string"
+            }]
+        }],
+        "securityIssues": [{
+            "type": "string",
+            "severity": "High|Medium|Low",
+            "description": "string",
+            "recommendation": "string",
+            "lineNumber": "string"
+        }]
+    },
+    "scaAnalysis": {
+        "vulnerablePackages": [{
+            "name": "string",
+            "version": "string",
+            "vulnerabilities": [{
+                "cveId": "string",
+                "severity": "High|Medium|Low",
+                "description": "string",
+                "fixedIn": "string"
+            }]
+        }],
+        "licenseIssues": [{
+            "package": "string",
+            "license": "string",
+            "issue": "string",
+            "recommendation": "string"
+        }],
+        "updateRecommendations": [{
+            "package": "string",
+            "currentVersion": "string",
+            "recommendedVersion": "string",
+            "reason": "string"
+        }]
     }
 }`;
 
@@ -1253,6 +1436,8 @@ Respond in JSON format with the following structure:
 2. Hardcoded credentials and secrets
 3. Insecure cryptographic implementations
 4. Other security vulnerabilities
+5. Docker security issues (if Dockerfile)
+6. Software Composition Analysis issues (if dependency files)
 
 IMPORTANT: Look for variable assignments containing hash values and string literals that match hash patterns.
 
